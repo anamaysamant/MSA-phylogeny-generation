@@ -1,1 +1,1 @@
-# MSA-phylogeny-generaion
+# MSA-phylogeny-generation
