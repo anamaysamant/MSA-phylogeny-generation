@@ -1,0 +1,107 @@
+configfile: "config.yaml"
+
+protein_families = ["PF00004"]
+MSA_type = ["seed"]
+dca_type = ["full"]
+initial_sampling_size = [100]
+simulators= ["MSA-1b","ESM2","Potts"]
+
+rule all:
+    input:
+        "plots/quals.svg"
+
+rule generate_tree:
+    input:
+        "data/protein-families-msa-{msa_type}/{fam}-{msa_type}.fasta"
+    output:
+        "data/{msa_type}-trees/{fam}-{msa_type}.tree"
+    log:
+        "logs/generate-tree/{fam}.log"
+    shell:
+        "FastTree {input} > {output}"
+
+rule simulate_along_phylogeny_MSA:
+    input:
+        MSA="data/protein-families-msa-{msa_type}/{fam}-{msa_type}.fasta",
+        tree="data/{msa_type}-trees/{fam}-{msa_type}.tree"
+    output:
+        "data/msa-{msa_type}-simulations/MSA-1b/{context_type}-context/{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    params:
+        context_type={context_type}
+        context_size={context_size}
+    shell:
+        "python simulate_along_phylogeny.py --output {output} --input_MSA {input.MSA} --input_tree {input.tree} | "
+        "--method MSA-1b --context_type {params.context_type} --context_size {params.context_size}"
+
+rule simulate_along_phylogeny_MSA_chunked:
+    input:
+        MSA="data/protein-families-msa-{msa_type}/{fam}-{msa_type}.fasta",
+        tree="data/{msa_type}-trees/{fam}-{msa_type}.tree"
+    output:
+        "data/msa-{msa_type}-simulations/MSA-1b/static-context/chunked/{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    params:
+        context_size={context_size}
+    shell:
+        "python simulate_along_phylogeny.py --output {output} --input_MSA {input.MSA} --input_tree {input.tree} | "
+        "--method MSA-1b --context_type static --context_size {params.context_size} --chunked"
+
+rule simulate_along_phylogeny_Potts:
+    input:
+        MSA="data/protein-families-msa-{msa_type}/{fam}-{msa_type}.fasta",
+        tree="data/{msa_type}-trees/{fam}-{msa_type}.tree"
+        J_param="data/protein-families-DCA-params-{dca_type}/{fam}-{dca_type}-J.npy"
+        J_param="data/protein-families-DCA-params-{dca_type}/{fam}-{dca_type}-h.npy"
+    output:
+        "data/msa-{msa_type}-simulations/Potts/{dca_type}_params/{fam}/{fam}-{sim_ind}.fasta"
+    shell:
+        "python simulate_along_phylogeny.py --output {output} --input_MSA {input.MSA} --input_tree {input.tree} | "
+        "--J {input.J_param} --h {input.h_param} --method Potts"
+
+rule simulate_along_phylogeny_ESM2:
+    input:
+        MSA="data/protein-families-msa-{msa_type}/{fam}-{msa_type}.fasta",
+        tree="data/{msa_type}-trees/{fam}-{msa_type}.tree"
+    output:
+        "data/msa-{msa_type}-simulations/ESM2/{fam}/{fam}-{sim_ind}.fasta"
+    shell:
+        "python simulate_along_phylogeny.py --output {output} --input_MSA {input.MSA} --input_tree {input.tree} | "
+        "--method ESM2"
+
+rule generate_HMMER_scores_MSA:
+    input:
+        MSA="data/msa-{msa_type}-simulations/MSA-1b/{context_type}-context/{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+        hmm="data/protein-families-hmms/{fam}.hmm"
+    output:
+        ungapped_seq=temp("data/msa-{msa_type}-simulations/MSA-1b/{context_type}-context/{context_size}/{fam}/{fam}-{sim_ind}-ungapped.fasta")
+        hmmer_table="metrics/hmmer_scores/msa-{msa_type}-simulations/MSA-1b/{context_type}-context/{context_size}/{fam}/{fam}-{sim_ind}.tbl"
+    shell:
+        """
+        seqkit replace -s -p "-" -r "" {input.MSA} > {output.ungapped_seq}
+        hmmsearch --tblout {output.hmmer_table} {input.hmm}.hmm {output.ungapped_seq}  
+        """
+
+rule generate_HMMER_scores_Potts:
+    input:
+        MSA="data/msa-{msa_type}-simulations/Potts/{dca_type}_params/{fam}/{fam}-{sim_ind}.fasta"
+        hmm="data/protein-families-hmms/{fam}.hmm"
+    output:
+        ungapped_seq=temp("data/msa-{msa_type}-simulations/Potts/{dca_type}_params/{fam}/{fam}-{sim_ind}-ungapped.fasta")
+        hmmer_table="metrics/hmmer_scores/msa-{msa_type}-simulations/Potts/{dca_type}_params/{fam}/{fam}-{sim_ind}.tbl"
+    shell:
+        """
+        seqkit replace -s -p "-" -r "" {input.MSA} > {output.ungapped_seq}
+        hmmsearch --tblout {output.hmmer_table} {input.hmm}.hmm {output.ungapped_seq}  
+        """
+
+rule generate_HMMER_scores_ESM2:
+    input:
+        MSA="data/msa-{msa_type}-simulations/Potts/{dca_type}_params/{fam}/{fam}-{sim_ind}.fasta"
+        hmm="data/protein-families-hmms/{fam}.hmm"
+    output:
+        ungapped_seq=temp("data/msa-{msa_type}-simulations/Potts/{dca_type}_params/{fam}/{fam}-{sim_ind}-ungapped.fasta")
+        hmmer_table="metrics/hmmer_scores/msa-{msa_type}-simulations/Potts/{dca_type}_params/{fam}/{fam}-{sim_ind}.tbl"
+    shell:
+        """
+        seqkit replace -s -p "-" -r "" {input.MSA} > {output.ungapped_seq}
+        hmmsearch --tblout {output.hmmer_table} {input.hmm}.hmm {output.ungapped_seq}  
+        """

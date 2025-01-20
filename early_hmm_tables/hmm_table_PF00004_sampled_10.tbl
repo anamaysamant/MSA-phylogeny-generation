@@ -1,0 +1,23 @@
+#                                                               --- full sequence ---- --- best 1 domain ---- --- domain number estimation ----
+# target name        accession  query name           accession    E-value  score  bias   E-value  score  bias   exp reg clu  ov env dom rep inc description of target
+#------------------- ---------- -------------------- ---------- --------- ------ ----- --------- ------ -----   --- --- --- --- --- --- --- --- ---------------------
+sample20356          -          AAA                  PF00004.35   6.7e-24   74.3   0.0   7.2e-24   74.2   0.0   1.0   1   0   0   1   1   1   1 -
+sample15741          -          AAA                  PF00004.35   4.8e-21   65.0   0.0   5.7e-21   64.8   0.0   1.0   1   0   0   1   1   1   1 -
+sample21099          -          AAA                  PF00004.35   7.6e-21   64.4   0.0   8.3e-21   64.3   0.0   1.0   1   0   0   1   1   1   1 -
+sample1847           -          AAA                  PF00004.35   2.7e-19   59.4   0.1     3e-19   59.2   0.1   1.0   1   0   0   1   1   1   1 -
+sample9340           -          AAA                  PF00004.35   1.8e-17   53.5   0.0   1.9e-17   53.4   0.0   1.0   1   0   0   1   1   1   1 -
+sample0              -          AAA                  PF00004.35   1.5e-16   50.5   0.1   1.6e-16   50.4   0.1   1.0   1   0   0   1   1   1   1 -
+sample7846           -          AAA                  PF00004.35   2.7e-13   40.0   0.0   2.9e-13   39.9   0.0   1.0   1   0   0   1   1   1   1 -
+sample19642          -          AAA                  PF00004.35   2.8e-12   36.7   0.2   7.7e-12   35.3   0.2   1.7   1   1   0   1   1   1   1 -
+sample35324          -          AAA                  PF00004.35   2.8e-11   33.4   0.0   3.2e-11   33.3   0.0   1.0   1   0   0   1   1   1   1 -
+sample314            -          AAA                  PF00004.35   3.3e-09   26.7   2.2   9.1e-09   25.3   2.2   1.7   1   1   0   1   1   1   1 -
+#
+# Program:         hmmsearch
+# Version:         3.3.2 (Nov 2020)
+# Pipeline mode:   SEARCH
+# Query file:      PF00004.hmm
+# Target file:     PF00004_sampled_10_ungapped.fasta
+# Option settings: hmmsearch --tblout hmm_table_MSA_gen_10 PF00004.hmm PF00004_sampled_10_ungapped.fasta 
+# Current dir:     /home/samant/MSA_phylogeny_gen
+# Date:            Wed Jan 15 15:05:50 2025
+# [ok]
