@@ -18,6 +18,7 @@ class MSAGenerator(ABC):
         # Set the number of states 20 amino acids
         # spin = index of the possible state
         self.number_state_spin = number_state_spin
+        self.cur_index = 0
 
     @abstractmethod
     def msa_tree_phylo(self, clade_root, flip_before_start, first_sequence, neff=1.0):
@@ -53,6 +54,7 @@ class MSAGenerator(ABC):
                 self.msa_tree_phylo_recur(clade, new_sequence, msa, neff)
         else:  # If b is a leaf
             # Save the leaf sequence in the MSA
-            msa[int(clade_root.name), :] = previous_sequence
-            print(clade_root.name)
+            msa[self.cur_index, :] = previous_sequence
+            self.cur_index += 1
+            # print(clade_root.name)
         return msa

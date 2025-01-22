@@ -18,6 +18,8 @@ class MSAGeneratorPottsModel(MSAGenerator):
         # Set fields and couplings
         self.field = field
         self.coupling = coupling
+        self.bmdca_mapping = {k:v for k,v in zip(list("-ACDEFGHIKLMNPQRSTVWY"), range(21))}
+        self.bmdca_mapping_inv = {k:v for k,v in zip(range(21),list("-ACDEFGHIKLMNPQRSTVWY"))}
         
 
     def msa_tree_phylo(self, clade_root, first_sequence, flip_before_start=0, neff=1.0):
@@ -37,7 +39,10 @@ class MSAGeneratorPottsModel(MSAGenerator):
         # Compute the first sequence (root)
         self.mcmc(flip_before_start, first_sequence)
         # Create the new sequences in the MSA recursively
-        return np.asarray(self.msa_tree_phylo_recur(clade_root, first_sequence, msa, neff))
+        final_msa = np.asarray(self.msa_tree_phylo_recur(clade_root, first_sequence, msa, neff))
+        self.cur_index = 0
+
+        return final_msa
   
     def mcmc(self, number_of_mutation, l_spin):
         """
@@ -65,7 +70,7 @@ class MSAGeneratorPottsModel(MSAGenerator):
                   - self.pseudo_hamiltonian(selected_node, l_spin[selected_node], l_spin))
 
             # If the difference is positive or if it is greater than a random value, apply the mutation
-            if de >= 0 or random.random() < np.exp(de):
+            if de >= 0 or np.random.uniform() < np.exp(de):
                 # Modify the selected position with the new selected state
                 l_spin[selected_node] = new_state
                 # Increase the number of mutation applied

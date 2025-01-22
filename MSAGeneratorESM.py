@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, AutoModelForMaskedLM
 import torch.nn as nn
 
 
-class MSAGeneratorESM(MSAGenerator.MSAGenerator):
+class MSAGeneratorESM(MSAGenerator):
     """
     Class that generates an MSA based on a single sequence using ESM.
     """
@@ -42,7 +42,7 @@ class MSAGeneratorESM(MSAGenerator.MSAGenerator):
         # Set the map for computing the sequences
         self.amino_acid_map = {char: index for index, char in enumerate(self.tokenizer.all_tokens) if char in
                                ['L', 'A', 'G', 'V', 'S', 'E', 'R', 'T', 'I', 'D', 'P', 'K', 'Q', 'N', 'F', 'Y', 'M',
-                                'H', 'W', 'C']}
+                                'H', 'W', 'C','-']}
         self.inverse_amino_acid_map = {v: k for k, v in self.amino_acid_map.items()}
 
     def transform_sequence_to_array(self, sequence):
@@ -75,7 +75,10 @@ class MSAGeneratorESM(MSAGenerator.MSAGenerator):
         # Initialize the MSA
         msa = np.zeros((len(clade_root.get_terminals()), self.number_of_nodes), dtype=np.int8)
         # Create the new sequences recursively
-        return np.asarray(self.msa_tree_phylo_recur(clade_root, first_sequence, msa, neff))
+        final_msa = np.asarray(self.msa_tree_phylo_recur(clade_root, first_sequence, msa, neff))
+        self.cur_index = 0
+
+        return final_msa
 
     def mcmc(self, number_of_mutation, l_spin):
         """
@@ -93,13 +96,18 @@ class MSAGeneratorESM(MSAGenerator.MSAGenerator):
             selected_nodes = np.random.choice(np.arange(self.number_of_nodes), size=self.batch_size, replace=True)
 
             # Select new states
-            new_states = np.random.randint(low=min(self.amino_acid_map.values()),
-                                           high=max(self.amino_acid_map.values()) - 1, size=self.batch_size)
+            new_states = np.random.randint(low = 4, high= 24, size=self.batch_size)
 
             # Avoid to select the same state as before
             for i in range(self.batch_size):
+
                 if new_states[i] >= l_spin[selected_nodes[i]]:
                     new_states[i] += 1
+
+                if new_states[i] == 24:
+                    new_states[i] = 30
+            
+            
 
             # Get the current sequence in string format
             protein_sequence = self.transform_array_to_sequence(l_spin)
@@ -130,7 +138,7 @@ class MSAGeneratorESM(MSAGenerator.MSAGenerator):
                 p = score_new / score_old
 
                 # If the difference is positive or if it is greater than a random value, apply the mutation
-                if random.random() < p or p >= 1:
+                if np.random.uniform() < p or p >= 1:
                     # Modify the selected position with the new selected state
                     l_spin[selected_nodes[i]] = new_states[i]
                     # Increase the number of mutation applied

@@ -68,11 +68,12 @@ class Creation_MSA_Generation_MSA1b_Cython:
         # self.msa_light.load_state_dict(base_state_dict, strict=True)
         # self.msa_lm_head.load_state_dict(lm_head_state_dict, strict=True)
 
-        _,_,self.context = self.batch_converter([self.original_MSA[1:]])
-        self.context = self.context.to(self.device)
-        
-        _,_,self.init_seq = self.batch_converter([self.original_MSA[:1]])
-        self.init_seq = self.init_seq.to(self.device)
+        self.start_seq_init(start_seq_index)
+
+        self.full_context = self.original_MSA[1:]
+
+        self.context = None
+        self.init_seq = None
 
         # del self.model
     
@@ -99,9 +100,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
     
         _,_,self.init_seq = self.batch_converter([seq_plus_context[:1]])
         self.init_seq = self.init_seq.to(self.device)
-
-        
-
 
     def start_seq_init(self, start_seq_index = 0):
 
@@ -184,10 +182,12 @@ class Creation_MSA_Generation_MSA1b_Cython:
                 
         self.phylogeny_MSA = []
 
+        self.sample_context(self.original_MSA)
         first_sequence_tokens = self.mcmc(flip_before_start, self.init_seq)
+    
         if context_type == "static":
-            self.sample_context(self.full_context)
             self.msa_tree_phylo_recur(clade_root, first_sequence_tokens, method, masked)
+
         elif context_type == "dynamic":
             self.msa_tree_phylo_recur_dynamic(clade_root, first_sequence_tokens, method, masked)
 
@@ -239,8 +239,8 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
         if len(b)>0:
             for clade in b:
-                #Mutation on previous_sequences
-                print("entering new branch")
+                # Mutation on previous_sequences
+                # print("entering new branch")
                 n_mutations = clade.branch_length*self.n_cols
                 new_sequence_tokens = self.mcmc(n_mutations, previous_sequence_tokens, method, masked)
                 self.msa_tree_phylo_recur(clade, new_sequence_tokens, method, masked)
@@ -262,20 +262,20 @@ class Creation_MSA_Generation_MSA1b_Cython:
         
         if len(b)>1:
             for clade in b:
-                print("entering new branch")
+                # print("entering new branch")
                 n_mutations = clade.branch_length*self.n_cols
                 desc_leaves = [node.name for node in clade.get_terminals()]
                 desc_sequences = [elem for elem in self.original_MSA if elem[0] in desc_leaves]
                 if len(desc_leaves) > context_size:
                         
-                    # random_ind = list(np.random.choice(range(len(desc_sequences)),context_size, replace = False))
-                    # self.context = [desc_sequences[i] for i in random_ind]
-                    self.context = greedy_select(desc_sequences, num_seqs = context_size)
+                    random_ind = list(np.random.choice(range(len(desc_sequences)),context_size, replace = False))
+                    self.context = [desc_sequences[i] for i in random_ind]
+                    # self.context = greedy_select(desc_sequences, num_seqs = context_size)
               
                     _,_,self.context = self.batch_converter([self.context])
                     self.context = self.context.to(self.device)
                 
-                new_tree = self.generate_subtree(desc_leaves,self.full_tree,self.full_tree_path)
+                new_tree = self.generate_subtree(desc_leaves)
                 new_sequence_tokens = self.mcmc(n_mutations, previous_sequence_tokens, method, masked)
                 self.msa_tree_phylo_recur_dynamic(new_tree.clade, new_sequence_tokens, method, masked)
         else:
@@ -299,8 +299,8 @@ class Creation_MSA_Generation_MSA1b_Cython:
             int tot_mutations = Number_of_Mutation
             float de
 
-        print(f"Number of mutations: {tot_mutations}")
-        proposals = 0
+        # print(f"Number of mutations: {tot_mutations}")
+        # proposals = 0
         
         while c_mutation<tot_mutations:
 
@@ -314,7 +314,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
             
             proposed_mutation = np.random.randint(4, 24)
 
-            proposals += 1
+            # proposals += 1
 
             if proposed_mutation >= original_character_int:
                 proposed_mutation += 1
@@ -339,6 +339,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
                 previous_sequence_tokens = modified_sequence_tokens.clone()
                 c_mutation += 1
 
-        print(f"Number of proposals: {proposals}")
+        # print(f"Number of proposals: {proposals}")
         
         return previous_sequence_tokens
