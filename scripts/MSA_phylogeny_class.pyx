@@ -311,6 +311,28 @@ class Creation_MSA_Generation_MSA1b_Cython:
    
             print(f"Number of sequences generated: {len(self.phylogeny_MSA)}")
 
+
+    def msa_no_phylo(self, context_size, n_sequences, n_mutations, method, masked, proposal):
+
+        syn_sequences_list = []
+
+        self.sample_static_context(self.original_MSA, method = "greedy", context_size = context_size)
+
+        for i in range(n_sequences):
+
+            new_sequence_tokens = self.mcmc(n_mutations, self.init_seq, method, masked, proposal)
+
+            final_seq = ""
+            for i in range(1,self.n_cols+1):
+
+                char_index = int(new_sequence_tokens[0,0,i].cpu().numpy())
+                character = self.model_alphabet_mapping_inv[char_index]
+                final_seq += character
+                            
+            seq_index = len(syn_sequences_list)
+            syn_sequences_list.append((f"seq{seq_index}",final_seq))
+
+        return syn_sequences_list
     
     @cython.cdivision(True)
     def mcmc(self, Number_of_Mutation, previous_sequence_tokens, method, masked, proposal):  
@@ -396,6 +418,8 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
         elif proposal == "msa_prob_dist":
 
+            previous_tokens_for_ham_dist = previous_sequence_tokens.squeeze(0).cpu().numpy()
+
             relevant_char_indices = list(range(4,24)) + [30]
             relevant_indices_mapping = {k:v for k,v in zip(relevant_char_indices,list(range(21)))}
             proposal_probs = []
@@ -436,8 +460,14 @@ class Creation_MSA_Generation_MSA1b_Cython:
                 c_mutation += 1
 
             
+            new_tokens_for_hamming_dist = previous_sequence_tokens.squeeze(0).cpu().numpy()
+
+            hamming_dist = cdist(new_tokens_for_hamming_dist,previous_tokens_for_ham_dist,"hamming").item()
+
+            self.hamming_distances.append(hamming_dist)
             mean_proposal_probs = float(np.mean(proposal_probs))
             self.mean_proposal_probs.append(mean_proposal_probs)
+            self.n_mutations.append(tot_mutations)
 
         
         

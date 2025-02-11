@@ -80,7 +80,16 @@ parser.add_argument("--proposal_type", action="store", dest="proposal_type",
                     help="proposal distribution used")
 
 parser.add_argument("--chunked", action="store_true", dest="chunked",
-                    help="write the batch size")
+                    help="generate chunks of new MSA")
+
+parser.add_argument("--no_phylogeny", action="store_true", dest="no_phylogeny",
+                    help="do not evolve along a tree")
+
+parser.add_argument( "--n_mutations", action="store", dest="n_mutations", 
+                    help="number of mutations for independent MCMC sequence generation", type=int)
+
+parser.add_argument( "--n_sequences", action="store", dest="n_sequences", 
+                    help="number of independent sequences to generate via MCMC", type=int)
 
 parser.add_argument( "--seed", action="store", dest="seed", 
                     help="random seed to use", type=int, default=0)
@@ -100,6 +109,9 @@ starting_seq_index = args.start_seq_index
 output = args.output
 J_params = args.J_params
 h_params = args.h_params
+no_phylogeny = args.no_phylogeny
+n_mutations = args.n_mutations
+n_sequences = args.n_sequences
 seed = args.seed
 
 np.random.seed(seed)
@@ -109,31 +121,39 @@ all_seqs = [(record.description, remove_insertions(str(record.seq))) for record 
 if num_seqs == None:
     num_seqs = len(all_seqs)
 
-tree = Phylo.read(tree_path,"newick")
-tree.root_at_midpoint()
+if not no_phylogeny:
+    tree = Phylo.read(tree_path,"newick")
+    tree.root_at_midpoint()
 
 if tool == "MSA_1b":
 
     t1 = time()
 
-    MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, full_tree = tree, full_tree_path = tree_path)
+    if not no_phylogeny:
+        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, full_tree = tree, full_tree_path = tree_path)
+    else:
+        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs)
 
     method = "minimal"
     masked = True
     chunked = args.chunked
 
-    if not chunked:
-        new_MSA = MSA_gen_obj.msa_tree_phylo(tree.clade,flip_before_start=0, method=method, 
-        masked=masked, context_type = context_type, context_sampling = context_sampling, context_size = context_size, proposal = proposal_type)
-    else:
-        new_MSA = MSA_gen_obj.msa_tree_phylo_chunked(total_sequences = 100,sequences_per_iteration = 10, method=method, masked=masked, proposal = proposal_type)
+    if not no_phylogeny:
+        if not chunked:
+            new_MSA = MSA_gen_obj.msa_tree_phylo(tree.clade,flip_before_start=0, method=method, 
+            masked=masked, context_type = context_type, context_sampling = context_sampling, context_size = context_size, proposal = proposal_type)
+        else:
+            new_MSA = MSA_gen_obj.msa_tree_phylo_chunked(total_sequences = 100,sequences_per_iteration = 10, method=method, masked=masked, proposal = proposal_type)
 
-    t2 = time()
+        t2 = time()
 
-    if context_type == "dynamic":
-        logging.info(f"Time taken to simulate along phylogeny using MSA-1b ({context_type}-{context_sampling}-{context_size}-{proposal_type}): {(t2-t1)/60} minutes")
+        if context_type == "dynamic":
+            logging.info(f"Time taken to simulate along phylogeny using MSA-1b ({context_type}-{context_sampling}-{context_size}-{proposal_type}): {(t2-t1)/60} minutes")
+        else:
+            logging.info(f"Time taken to simulate along phylogeny using MSA-1b ({context_type}-{context_size}-{proposal_type}): {(t2-t1)/60} minutes")
     else:
-        logging.info(f"Time taken to simulate along phylogeny using MSA-1b ({context_type}-{context_size}-{proposal_type}): {(t2-t1)/60} minutes")
+        new_MSA = MSA_gen_obj.msa_no_phylo(context_size = context_size, n_sequences = n_sequences,n_mutations = n_mutations, method=method, 
+                                           masked=masked, proposal = proposal_type)
 
     Seq_tuples_to_fasta(new_MSA,output)
 
@@ -152,6 +172,8 @@ if tool == "MSA_1b":
         np.save(os.path.join(diagnostics_folder,"mean_accepted_acceptance_criteria.npy"),MSA_gen_obj.mean_accepted_acceptance_criteria)
     elif proposal_type == "msa_prob_dist":
         np.save(os.path.join(diagnostics_folder,"mean_proposal_probs.npy"),MSA_gen_obj.mean_proposal_probs)
+        np.save(os.path.join(diagnostics_folder,"n_mutations.npy"),MSA_gen_obj.n_mutations)
+        np.save(os.path.join(diagnostics_folder,"hamming_distances.npy"),MSA_gen_obj.hamming_distances)
         
 elif tool == "ESM2":
 

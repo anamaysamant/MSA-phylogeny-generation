@@ -5,22 +5,22 @@ import time
 from scipy.spatial.distance import cdist
 from Bio import Phylo
 
-def leaf_matcher(clade_root, all_syn_seqs, all_nat_seqs):
+def leaf_matcher(clade_root, all_syn_seqs, all_nat_seqs_dict):
 
     output = []
     
-    def leaf_matcher_recur(tree_root, all_syn_seqs, all_nat_seqs):
+    def leaf_matcher_recur(tree_root, all_syn_seqs, all_nat_seqs_dict):
     
         b = tree_root.clades
         
         if len(b)>0:
             for clade in b:
-               leaf_matcher_recur(clade, all_syn_seqs, all_nat_seqs) 
+               leaf_matcher_recur(clade, all_syn_seqs, all_nat_seqs_dict) 
         else:
             counter = len(output)
-            output.append({"sequence_name":all_syn_seqs[counter][0],"corr_nat_seq_name":all_nat_seqs[counter][0], "corr_nat_seq":all_nat_seqs[counter][1]})
+            output.append({"sequence_name":all_syn_seqs[counter][0],"corr_nat_seq_name":tree_root.name, "corr_nat_seq":all_nat_seqs_dict[tree_root.name]})
 
-    leaf_matcher_recur(clade_root, all_syn_seqs, all_nat_seqs)
+    leaf_matcher_recur(clade_root, all_syn_seqs, all_nat_seqs_dict)
 
     return pd.DataFrame(output)
 
@@ -50,6 +50,9 @@ parser.add_argument("--original_MSA_full", action="store", dest="original_MSA_fu
 parser.add_argument("-O", "--output", action="store", dest="output", 
                     help="processed hmmer table")
 
+parser.add_argument("--no_phylogeny", action="store_true", dest="no_phylogeny",
+                    help="do not evolve along a tree")
+
 args = parser.parse_args()
 
 input_hmmer = args.input_hmmer
@@ -60,9 +63,11 @@ original_MSA_full = args.original_MSA_full
 J_params = args.J_params
 h_params = args.h_params
 tree_path = args.tree
+no_phylogeny = args.no_phylogeny
 
-tree = Phylo.read(tree_path,"newick")
-tree.root_at_midpoint()
+if not no_phylogeny:
+    tree = Phylo.read(tree_path,"newick")
+    tree.root_at_midpoint()
 
 table = open(input_hmmer)
 with open(output,"w") as f:
@@ -85,12 +90,16 @@ nat_full_sequences = [(record.description, remove_insertions(str(record.seq))) f
 n_cols = len(synth_sequences[0][1])
 n_rows = len(synth_sequences)
 
-matched_seqs = leaf_matcher(tree.clade, all_syn_seqs=synth_sequences, all_nat_seqs=nat_seed_sequences)
-
-synth_sequences = pd.DataFrame(synth_sequences, columns=["sequence_name","sequence"])
-
-scores_table = scores_table.merge(synth_sequences, on="sequence_name").merge(matched_seqs, on="sequence_name")
-scores_table = scores_table[["sequence_name","sequence","corr_nat_seq_name","corr_nat_seq","hmmer_seq_score"]]
+if not no_phylogeny:
+    nat_seed_sequences_dict = dict(nat_seed_sequences)
+    matched_seqs = leaf_matcher(tree.clade, all_syn_seqs=synth_sequences, all_nat_seqs_dict=nat_seed_sequences_dict)
+    synth_sequences = pd.DataFrame(synth_sequences, columns=["sequence_name","sequence"])
+    scores_table = scores_table.merge(synth_sequences, on="sequence_name").merge(matched_seqs, on="sequence_name")
+    scores_table = scores_table[["sequence_name","sequence","corr_nat_seq_name","corr_nat_seq","hmmer_seq_score"]]
+else:
+    synth_sequences = pd.DataFrame(synth_sequences, columns=["sequence_name","sequence"])
+    scores_table = scores_table.merge(synth_sequences, on="sequence_name")
+    scores_table = scores_table[["sequence_name","sequence","hmmer_seq_score"]]
 
 bmdca_mapping  = {k:v for k,v in zip(list("-ACDEFGHIKLMNPQRSTVWY"), range(21))}
 
