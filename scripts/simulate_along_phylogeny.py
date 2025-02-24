@@ -88,6 +88,9 @@ parser.add_argument("--no_phylogeny", action="store_true", dest="no_phylogeny",
 parser.add_argument( "--n_mutations", action="store", dest="n_mutations", 
                     help="number of mutations for independent MCMC sequence generation", type=int)
 
+parser.add_argument( "--FT_fam", action="store", dest="FT_fam", 
+                    help="family on which MSA transformer is finetuned")
+
 parser.add_argument( "--n_sequences", action="store", dest="n_sequences", 
                     help="number of independent sequences to generate via MCMC", type=int)
 
@@ -113,6 +116,7 @@ no_phylogeny = args.no_phylogeny
 n_mutations = args.n_mutations
 n_sequences = args.n_sequences
 seed = args.seed
+FT_fam = args.FT_fam
 
 np.random.seed(seed)
 
@@ -129,10 +133,17 @@ if tool == "MSA_1b":
 
     t1 = time()
 
-    if not no_phylogeny:
-        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, full_tree = tree, full_tree_path = tree_path)
+    if FT_fam != None:
+        model_to_use = torch.load(f"./finetuned_MSA_models/MSA_finetuned_{FT_fam}.pt")
+
     else:
-        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs)
+        model_to_use = None
+
+    if not no_phylogeny:
+        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, full_tree = tree, full_tree_path = tree_path, 
+                                                         start_seq_index=starting_seq_index, model_to_use=model_to_use)
+    else:
+        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=starting_seq_index, model_to_use=model_to_use)
 
     method = "minimal"
     masked = True
