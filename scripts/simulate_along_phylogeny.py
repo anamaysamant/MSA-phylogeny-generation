@@ -20,6 +20,7 @@ pyximport.install()
 from aux_msa_functions import *
 from MSAGeneratorESM import MSAGeneratorESM
 from MSAGeneratorPottsModel import MSAGeneratorPottsModel
+from select_gpu import get_free_gpu
 
 work_dir = os.getcwd()
 os.chdir("./scripts")
@@ -28,6 +29,8 @@ os.chdir(work_dir)
 
 import logging
 import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu()) 
 
 logging.basicConfig(
     filename='simulate_along_phylogeny.log',               
@@ -193,7 +196,15 @@ elif tool == "ESM2":
     ESM_gen_obj = MSAGeneratorESM(number_of_nodes= len(all_seqs[0][1]), number_state_spin=21,
                                 batch_size=1,model="facebook/esm2_t6_8M_UR50D")
     
-    first_sequence = all_seqs[starting_seq_index][1]
+    if starting_seq_index == -1:
+        print("x")
+        char_list = list("-ACDEFGHIKLMNPQRSTVWY")
+        rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs[0][1]), replace = True)
+        first_sequence = [char_list[i] for i in rand_char_order]
+        first_sequence = ''.join(first_sequence)
+    else:
+        first_sequence = all_seqs[starting_seq_index][1]
+    
     new_MSA = ESM_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, flip_before_start=0)
 
     seq_records = []
@@ -216,7 +227,15 @@ elif tool == "Potts":
 
     Potts_gen_obj = MSAGeneratorPottsModel(field = h_params, coupling = J_params)
     
-    first_sequence = all_seqs[starting_seq_index][1]
+    if starting_seq_index == -1:
+        print("x")
+        char_list = list("-ACDEFGHIKLMNPQRSTVWY")
+        rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs[0][1]), replace = True)
+        first_sequence = [char_list[i] for i in rand_char_order]
+        first_sequence = ''.join(first_sequence)
+    else:
+        first_sequence = all_seqs[starting_seq_index][1]
+
     first_sequence = np.array([Potts_gen_obj.bmdca_mapping[char] for char in list(first_sequence)])
     new_MSA = Potts_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, flip_before_start=0)
     

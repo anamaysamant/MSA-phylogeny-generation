@@ -12,7 +12,6 @@ from typing import List, Tuple, Optional, Dict, NamedTuple, Union, Callable
 
 from aux_msa_functions import greedy_select
 
-
 # from libc.time cimport time
 # from cython.parallel import prange
 
@@ -73,6 +72,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
         self.context = None
 
         if start_seq_index == -1:
+            print("x")
             char_list = list("-ACDEFGHIKLMNPQRSTVWY")
             rand_char_order = np.random.choice(range(len(char_list)), self.n_cols, replace = True)
             rand_seq = [char_list[i] for i in rand_char_order]
@@ -95,26 +95,30 @@ class Creation_MSA_Generation_MSA1b_Cython:
         # del self.model
     
     def sample_static_context(self, all_sequences, method, context_size):
+            
+        if context_size > 0:
 
-        if method == "greedy":
+            if method == "greedy":
 
-            context = greedy_select(all_sequences, num_seqs = context_size + 1)
-            context = context[1:]
+                context = greedy_select(all_sequences, num_seqs = context_size + 1)
+                context = context[1:]
 
-            _,_,self.context = self.batch_converter([context])
-            self.context = self.context.to(self.device)
-        
-        elif method == "random":
+                _,_,self.context = self.batch_converter([context])
+                self.context = self.context.to(self.device)
+            
+            elif method == "random":
 
-            random_ind = list(np.random.choice(range(1,len(all_sequences)),context_size, replace = False))
-            context = [all_sequences[i] for i in random_ind]
+                random_ind = list(np.random.choice(range(1,len(all_sequences)),context_size, replace = False))
+                context = [all_sequences[i] for i in random_ind]
 
-            _,_,self.context = self.batch_converter([context])
-            self.context = self.context.to(self.device)
+                _,_,self.context = self.batch_converter([context])
+                self.context = self.context.to(self.device)
 
     def start_seq_init(self, start_seq_index = 0):
 
-        if start_seq_index != 0:
+        if start_seq_index != 0 and start_seq_index != -1:
+
+            print("y")
 
             start_seq = self.original_MSA[start_seq_index]
             del self.original_MSA[start_seq_index]
@@ -357,7 +361,10 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
             while c_mutation<Number_of_Mutation:
 
-                stacked_tokens = torch.cat((previous_sequence_tokens, self.context), dim = 1)
+                if self.context != None:
+                    stacked_tokens = torch.cat((previous_sequence_tokens, self.context), dim = 1)
+                else:
+                    stacked_tokens = previous_sequence_tokens.clone()
                 
                 selected_pos = np.random.randint(1, self.n_cols + 1)
 
@@ -428,7 +435,10 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
             while c_mutation<Number_of_Mutation:
 
-                stacked_tokens = torch.cat((previous_sequence_tokens, self.context), dim = 1)
+                if self.context != None:
+                    stacked_tokens = torch.cat((previous_sequence_tokens, self.context), dim = 1)
+                else:
+                    stacked_tokens = previous_sequence_tokens.clone()
                 
                 selected_pos = np.random.randint(1, self.n_cols + 1)
 
