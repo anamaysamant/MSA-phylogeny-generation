@@ -32,13 +32,6 @@ import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu()) 
 
-logging.basicConfig(
-    filename='simulate_along_phylogeny.log',               
-    level=logging.INFO,              
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    filemode="a"
-)
-
 torch.set_grad_enabled(False)
 
 parser = argparse.ArgumentParser()
@@ -97,6 +90,9 @@ parser.add_argument( "--FT_fam", action="store", dest="FT_fam",
 parser.add_argument( "--n_sequences", action="store", dest="n_sequences", 
                     help="number of independent sequences to generate via MCMC", type=int)
 
+parser.add_argument( "--log_file", action="store", dest="log_file", 
+                    help="log file for the simulation")
+
 parser.add_argument( "--seed", action="store", dest="seed", 
                     help="random seed to use", type=int, default=0)
 
@@ -120,6 +116,14 @@ n_mutations = args.n_mutations
 n_sequences = args.n_sequences
 seed = args.seed
 FT_fam = args.FT_fam
+log_file = args.log_file
+
+logging.basicConfig(
+    filename=log_file,               
+    level=logging.INFO,              
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filemode="a"
+)
 
 np.random.seed(seed)
 
@@ -153,6 +157,14 @@ if tool == "MSA_1b":
     chunked = args.chunked
 
     if not no_phylogeny:
+
+        print(context_type)
+
+        if context_type == "dynamic":
+            logging.info(f"Simulating along phylogeny using MSA-1b ({context_type}-{context_sampling}-{context_size}-{proposal_type})")
+        else:
+            logging.info(f"Simulating along phylogeny using MSA-1b ({context_type}-{context_size}-{proposal_type})")
+
         if not chunked:
             new_MSA = MSA_gen_obj.msa_tree_phylo(tree.clade,flip_before_start=0, method=method, 
             masked=masked, context_type = context_type, context_sampling = context_sampling, context_size = context_size, proposal = proposal_type)
@@ -160,6 +172,8 @@ if tool == "MSA_1b":
             new_MSA = MSA_gen_obj.msa_tree_phylo_chunked(total_sequences = 100,sequences_per_iteration = 10, method=method, masked=masked, proposal = proposal_type)
 
         t2 = time()
+
+
 
         if context_type == "dynamic":
             logging.info(f"Time taken to simulate along phylogeny using MSA-1b ({context_type}-{context_sampling}-{context_size}-{proposal_type}): {(t2-t1)/60} minutes")
@@ -237,7 +251,11 @@ elif tool == "Potts":
         first_sequence = all_seqs[starting_seq_index][1]
 
     first_sequence = np.array([Potts_gen_obj.bmdca_mapping[char] for char in list(first_sequence)])
-    new_MSA = Potts_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, flip_before_start=0)
+
+    if no_phylogeny:
+        new_MSA = Potts_gen_obj.msa_no_phylo(n_sequences=n_sequences, n_mutations=n_mutations, first_sequence=first_sequence)
+    else:
+        new_MSA = Potts_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, flip_before_start=0)
     
     seq_records = []
     for i in range(new_MSA.shape[0]):

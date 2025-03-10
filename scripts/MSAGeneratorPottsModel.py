@@ -20,6 +20,20 @@ class MSAGeneratorPottsModel(MSAGenerator):
         self.coupling = coupling
         self.bmdca_mapping = {k:v for k,v in zip(list("-ACDEFGHIKLMNPQRSTVWY"), range(21))}
         self.bmdca_mapping_inv = {k:v for k,v in zip(range(21),list("-ACDEFGHIKLMNPQRSTVWY"))}
+
+    def msa_no_phylo(self, n_sequences, n_mutations, first_sequence):
+
+        msa = np.zeros((n_sequences, self.number_of_nodes), dtype=np.int8)
+
+        for i in range(n_sequences):
+
+            new_sequence = np.zeros((first_sequence.shape[0]), dtype=np.int8)
+            new_sequence[:] = first_sequence
+            self.mcmc(n_mutations, new_sequence)
+
+            msa[i,:] = new_sequence
+
+        return np.asarray(msa)
         
 
     def msa_tree_phylo(self, clade_root, first_sequence, flip_before_start=0, neff=1.0):

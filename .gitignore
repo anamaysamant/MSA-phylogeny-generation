@@ -174,3 +174,4 @@ cython_debug/
 .snakemake
 
 finetuned_MSA_models/
+*/msa-seed-simulations-old/

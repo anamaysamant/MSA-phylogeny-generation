@@ -1,9 +1,9 @@
 import numpy as np
 import torch
 import esm
-from msa_light import MSATransformer
-from msa_lm_head import MSATransformer_lm_head
-from tokenization import Vocab
+# from msa_light import MSATransformer
+# from msa_lm_head import MSATransformer_lm_head
+# from tokenization import Vocab
 from ete3 import Tree
 from Bio import Phylo
 import os
@@ -12,13 +12,7 @@ from typing import List, Tuple, Optional, Dict, NamedTuple, Union, Callable
 
 from aux_msa_functions import greedy_select
 
-# from libc.time cimport time
-# from cython.parallel import prange
-
 class Creation_MSA_Generation_MSA1b_Cython:
-
-    # cdef int n_rows
-    # cdef int n_cols
     
     def __init__(self, MSA, model_to_use = None, start_seq_index = 0,full_tree = None, full_tree_path = None, random_init_seq = False):
 
@@ -48,31 +42,12 @@ class Creation_MSA_Generation_MSA1b_Cython:
         self.batch_converter = self.alphabet.get_batch_converter()
         self.model.eval() 
 
-        # base_state_dict = {}
-        # for name, param in self.model.state_dict().items():
-        #     if not (name.startswith("lm_head") or name.startswith("contact_head")):
-        #         base_state_dict[name] = param
-        
-        # lm_head_state_dict = {}
-        # for name, param in self.model.state_dict().items():
-        #     if name.startswith("lm_head") or name == "embed_tokens.weight":
-        #         lm_head_state_dict[name] = param
-
-        # self.msa_light = MSATransformer(vocab = Vocab.from_esm_alphabet(self.alphabet))
-        # self.msa_light = self.msa_light.to(self.device)
-        
-        # self.msa_lm_head = MSATransformer_lm_head(vocab = Vocab.from_esm_alphabet(self.alphabet))
-        # self.msa_lm_head = self.msa_lm_head.to(self.device) 
-
-        # self.msa_light.load_state_dict(base_state_dict, strict=True)
-        # self.msa_lm_head.load_state_dict(lm_head_state_dict, strict=True)
-
         self.full_context = self.original_MSA[1:]
 
         self.context = None
 
         if start_seq_index == -1:
-            print("x")
+            print("starting from a random sequence")
             char_list = list("-ACDEFGHIKLMNPQRSTVWY")
             rand_char_order = np.random.choice(range(len(char_list)), self.n_cols, replace = True)
             rand_seq = [char_list[i] for i in rand_char_order]
@@ -91,8 +66,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
         self.n_proposals = []
         self.mean_acceptance_criteria = []
         self.mean_accepted_acceptance_criteria = []
-
-        # del self.model
     
     def sample_static_context(self, all_sequences, method, context_size):
             
@@ -118,8 +91,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
         if start_seq_index != 0 and start_seq_index != -1:
 
-            print("y")
-
             start_seq = self.original_MSA[start_seq_index]
             del self.original_MSA[start_seq_index]
             self.original_MSA = [start_seq] + self.original_MSA
@@ -140,7 +111,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
         
         with torch.no_grad(): 
 
-            # original_char_prob = (softmax(self.msa_lm_head(self.msa_light(batch_tokens_copy)[0,0,selected_pos,:])).cpu().numpy())[original_char_index]
             original_char_prob = (softmax(self.model(batch_tokens_copy)["logits"][0,0,selected_pos,:]).cpu().numpy())[original_char_index]
         
             if method == "minimal":
@@ -166,7 +136,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
                 log_prob_col = 0
     
-                # probs = softmax(self.msa_lm_head(self.msa_light(batch_tokens_copy)[0,:,selected_pos,:])).cpu().numpy()
                 probs = softmax(self.model(batch_tokens_copy)["logits"][0,:,selected_pos,:]).cpu().numpy()
 
                 for i in range(self.n_rows):
@@ -203,14 +172,14 @@ class Creation_MSA_Generation_MSA1b_Cython:
         self.phylogeny_MSA = []
 
         self.sample_static_context(self.original_MSA, method = "greedy", context_size = context_size)
-        first_sequence_tokens = self.mcmc(Number_of_Mutation = flip_before_start, previous_sequence_tokens = self.init_seq,
+        first_sequence_tokens = self.mcmc(Number_of_Mutation = flip_before_start, previous_sequence_tokens = self.init_seq.clone(),
                                         method = method, masked = masked, proposal = proposal)
     
         if context_type == "static":
-            self.msa_tree_phylo_recur(clade_root, first_sequence_tokens, method=method, masked=masked, proposal = proposal)
+            self.msa_tree_phylo_recur(clade_root, first_sequence_tokens.clone(), method=method, masked=masked, proposal = proposal)
 
         elif context_type == "dynamic":
-            self.msa_tree_phylo_recur_dynamic(clade_root, first_sequence_tokens, method=method, masked=masked, 
+            self.msa_tree_phylo_recur_dynamic(clade_root, first_sequence_tokens.clone(), method=method, masked=masked, 
                                                 context_sampling=context_sampling, context_size = context_size, proposal = proposal)
 
         results = self.phylogeny_MSA.copy()
@@ -264,8 +233,8 @@ class Creation_MSA_Generation_MSA1b_Cython:
                 # Mutation on previous_sequences
                 # print("entering new branch")
                 n_mutations = int(clade.branch_length*self.n_cols)
-                new_sequence_tokens = self.mcmc(n_mutations, previous_sequence_tokens, method, masked, proposal)
-                self.msa_tree_phylo_recur(clade, new_sequence_tokens, method, masked, proposal=proposal)
+                new_sequence_tokens = self.mcmc(n_mutations, previous_sequence_tokens.clone(), method, masked, proposal)
+                self.msa_tree_phylo_recur(clade, new_sequence_tokens.clone(), method, masked, proposal=proposal)
         else:
 
             final_seq = ""
@@ -303,8 +272,8 @@ class Creation_MSA_Generation_MSA1b_Cython:
                     self.context = self.context.to(self.device)
                 
                 # new_tree = self.generate_subtree(desc_leaves)
-                new_sequence_tokens = self.mcmc(n_mutations, previous_sequence_tokens, method, masked, proposal)
-                self.msa_tree_phylo_recur_dynamic(clade, new_sequence_tokens, method = method, masked =masked,
+                new_sequence_tokens = self.mcmc(n_mutations, previous_sequence_tokens.clone(), method, masked, proposal)
+                self.msa_tree_phylo_recur_dynamic(clade, new_sequence_tokens.clone(), method = method, masked =masked,
                                                     context_size = context_size, context_sampling = context_sampling,
                                                     proposal = proposal)
         else:
@@ -330,7 +299,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
         for i in range(n_sequences):
 
-            new_sequence_tokens = self.mcmc(n_mutations, self.init_seq, method, masked, proposal)
+            new_sequence_tokens = self.mcmc(n_mutations, self.init_seq.clone(), method, masked, proposal)
 
             final_seq = ""
             for i in range(1,self.n_cols+1):
@@ -392,8 +361,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
                 new_log_prob = self.prob_calculator(modified_stacked_tokens, selected_pos, method, masked)
 
                 proposed_probs.append(np.exp(new_log_prob))
-
-                # assert (self.arr_check_1 == self.arr_check_2).all()
                 
                 de = new_log_prob - orig_log_prob
                 acceptance_criteria.append(np.exp(de))

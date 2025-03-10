@@ -1,7 +1,7 @@
 FAMILIES = ["PF00004"]
 MSA_TYPES = ["seed"]
-PROPOSAL_TYPES = ["msa_prob_dist"]
-CONTEXT_SIZES = ["0","1","10"]
+PROPOSAL_TYPES = ["msa_prob_dist","random"]
+CONTEXT_SIZES = ["10"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
 INIT_SEQS = ["-1"]
@@ -13,12 +13,13 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
-        expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv",
-                  msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS, 
-                  context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
-        expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS, 
-                context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
+        # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv",
+        #           msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS, 
+        #           context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
+        # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS, 
+        #         context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
+
 
 rule root_tree:
     input:
@@ -33,6 +34,8 @@ rule simulate_without_phylogeny_MSA:
         MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
     output:
         "data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    log:
+        "logs/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.log"
     shell:
         """
         python scripts/simulate_along_phylogeny.py --tool MSA_1b --output {output} --input_MSA {input.MSA} --context_size {wildcards.context_size}  \
@@ -68,6 +71,8 @@ rule simulate_without_phylogeny_MSA_finetuned:
         MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
     output:
         "data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    log:
+        "logs/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.log"
     shell:
         """
         python scripts/simulate_along_phylogeny.py --tool MSA_1b --output {output} --input_MSA {input.MSA} --context_size {wildcards.context_size}  \

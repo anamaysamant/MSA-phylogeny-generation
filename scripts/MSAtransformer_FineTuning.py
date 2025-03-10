@@ -2,8 +2,6 @@ import esm
 import torch
 from time import time
 
-from typing import List, Tuple, Optional, Dict, NamedTuple, Union, Callable
-
 import numpy as np
 from Bio import SeqIO, Phylo
 import pandas as pd
@@ -11,15 +9,15 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from torch.utils.data import Dataset, DataLoader
 from aux_msa_functions import remove_insertions
+from select_gpu import get_free_gpu
 
 torch.set_grad_enabled(True)
 import torch.nn as nn
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1" 
+os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu())
 
 import logging
-import os
 
 logging.basicConfig(
     filename='fine_tuning.log',               
