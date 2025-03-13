@@ -3,10 +3,10 @@ MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static","dynamic"]
 CONTEXT_SIZES = ["10"]
 CONTEXT_SAMPLINGS = ["greedy","random"]
-PROPOSAL_TYPES = ["msa_prob_dist"]
+PROPOSAL_TYPES = ["msa_prob_dist","random"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
-INIT_SEQS = ["0","-1"]
+INIT_SEQS = ["-1"]
 
 N_MUTATIONS_START = 500
 N_MUTATIONS_END = ["1000"]

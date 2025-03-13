@@ -147,18 +147,3 @@ for epoch in range(num_epochs):
         del masked_MSAs, true_MSAs, logits
 
 torch.save(model,f"MSA_finetuned_{FT_Fam}.pt")
-
-# with torch.no_grad():
-#     n_correct = 0
-#     n_samples = 0
-#     for images, labels in test_loader:
-#         images = images.reshape(-1, 28*28).to(device)
-#         labels = labels.to(device)
-#         outputs = model(images)
-#         # max returns (value ,index)
-#         _, predicted = torch.max(outputs.data, 1)
-#         n_samples += labels.size(0)
-#         n_correct += (predicted == labels).sum().item()
-
-#     acc = 100.0 * n_correct / n_samples
-#     print(f'Accuracy of the network on the 10000 test images: {acc} %')

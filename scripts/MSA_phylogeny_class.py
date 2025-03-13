@@ -14,7 +14,7 @@ from aux_msa_functions import greedy_select
 
 class Creation_MSA_Generation_MSA1b_Cython:
     
-    def __init__(self, MSA, model_to_use = None, start_seq_index = 0,full_tree = None, full_tree_path = None, random_init_seq = False):
+    def __init__(self, MSA, model_to_use = None, start_seq_index = 0,full_tree = None, full_tree_path = None, random_init_seq = False, seed = None):
 
         torch.cuda.empty_cache()
 
@@ -73,7 +73,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
             if method == "greedy":
 
-                context = greedy_select(all_sequences, num_seqs = context_size + 1)
+                context = greedy_select(all_sequences, num_seqs = context_size + 1, seed = self.seed)
                 context = context[1:]
 
                 _,_,self.context = self.batch_converter([context])
@@ -419,7 +419,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
                 
                 with torch.no_grad(): 
 
-                    # original_char_prob = (softmax(self.msa_lm_head(self.msa_light(batch_tokens_copy)[0,0,selected_pos,:])).cpu().numpy())
                     char_prob_dist = (softmax(self.model(stacked_tokens_copy)["logits"][0,0,selected_pos,:]).cpu().numpy())
                 
                 char_prob_dist = char_prob_dist[relevant_char_indices]

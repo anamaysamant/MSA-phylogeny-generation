@@ -32,7 +32,7 @@ def read_msa(filename: str) -> List[Tuple[str, str]]:
     """ Reads the sequences from an MSA file, automatically removes insertions."""
     return [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(filename, "fasta")]
 
-def greedy_select(msa: List[Tuple[str, str]], num_seqs: int, mode: str = "max") -> List[Tuple[str, str]]:
+def greedy_select(msa: List[Tuple[str, str]], num_seqs: int, mode: str = "max", seed = None) -> List[Tuple[str, str]]:
     assert mode in ("max", "min")
     if len(msa) <= num_seqs:
         return msa
@@ -41,7 +41,11 @@ def greedy_select(msa: List[Tuple[str, str]], num_seqs: int, mode: str = "max") 
 
     optfunc = np.argmax if mode == "max" else np.argmin
     all_indices = np.arange(len(msa))
-    indices = [np.random.randint(0,len(msa))]
+    if seed != None:
+        rng = np.random.RandomState(seed)
+        indices = [rng.randint(0,len(msa))] 
+    else:    
+        indices = [np.random.randint(0,len(msa))]
     pairwise_distances = np.zeros((0, len(msa)))
     for _ in range(num_seqs - 1):
         dist = cdist(array[indices[-1:]], array, "hamming")

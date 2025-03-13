@@ -1,3 +1,4 @@
+import logging
 import numpy as np
 from Bio import SeqIO
 import pandas as pd
@@ -16,14 +17,63 @@ from MSA_phylogeny_class import Creation_MSA_Generation_MSA1b_Cython
 os.chdir(work_dir)
 
 import os
+from time import time
 
 os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu())
+
+def custom_mi(values_1, values_2, domain_1 = list("-ACDEFGHIKLMNPQRSTVWY"), domain_2 = list("-ACDEFGHIKLMNPQRSTVWY"), pseudocount = 0):
+
+    assert len(values_1) == len(values_2), 'arrays must be of the same length'
+    
+    values_1_counts = {}
+    values_2_counts = {}
+    joint_counts = {}
+    mi = 0
+
+    for elem_1 in domain_1:
+        for elem_2 in domain_2:
+            joint_counts[(elem_1, elem_2)] = pseudocount
+    
+    for elem_1 in domain_1:
+        values_1_counts[elem_1] = pseudocount * len(domain_2)
+    
+    for elem_2 in domain_2:
+        values_2_counts[elem_2] = pseudocount * len(domain_1)
+
+    for i in range(len(values_1)):
+
+        elem_1 = values_1[i]
+        elem_2 = values_2[i]
+
+        values_1_counts[elem_1] += 1
+        values_2_counts[elem_2] += 1
+
+        joint_counts[(elem_1, elem_2)] += 1
+
+    total_counts = pseudocount * len(domain_1) * len(domain_2) + len(values_1)
+    
+    for elem_1 in domain_1:
+        for elem_2 in domain_2:
+
+            probs_elem_1 = values_1_counts[elem_1] / total_counts
+            probs_elem_2 = values_2_counts[elem_2] / total_counts
+            joint_probs = joint_counts[(elem_1, elem_2)] / total_counts
+
+            if probs_elem_1 > 0 and probs_elem_2 > 0:
+                mi += joint_probs * np.log(joint_probs/(probs_elem_1 * probs_elem_2))
+
+
+    return mi
+
+
+
+
 
 parser = argparse.ArgumentParser()
 
 
 parser.add_argument("-O", "--output", action="store", dest="output",
-                    help="path to final simulated MSA"
+                    help="path to final output"
                 )
 
 parser.add_argument("-i", "--input_MSA", action="store", dest="input_MSA",
@@ -51,8 +101,12 @@ parser.add_argument( "--FT_fam", action="store", dest="FT_fam",
 parser.add_argument( "--MI_method", action="store", dest="MI_method", 
                     help="Method of calculating MI")
 
+parser.add_argument("--pseudocount", action="store", dest="pseudocount", 
+                    help="Method of calculating MI", type=float, default=0.0)
+
 parser.add_argument( "--seed", action="store", dest="seed", 
                     help="random seed to use", type=int, default=0)
+
 
 args = parser.parse_args()
 
@@ -65,11 +119,19 @@ n_rounds = args.n_rounds
 FT_fam = args.FT_fam
 random = args.random
 MI_method = args.MI_method
+pseudocount = args.pseudocount
 
 proposal_distributions = ["msa_prob_dist","random"]
 seed = args.seed
 
 np.random.seed(seed)
+
+logging.basicConfig(
+    filename=f"MI_decay_{context_size}_nseqs_{n_sequences}_pseudo_{pseudocount}.log",               
+    level=logging.INFO,              
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filemode="a"
+)
 
 all_seqs = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(input_MSA, "fasta")]
 
@@ -99,13 +161,15 @@ output_df = []
 nat_array = pd.DataFrame([list(seq[1]) for seq in sampled_seqs])
 mi_nat_values = []
 
+logging.info(f"Using {MI_method} for MI decay analysis")
+
 if MI_method == "within_MSA":
 
     for k in range(nat_array.shape[1]):
 
         for l in range(k + 1, nat_array.shape[1]):
 
-            mi_nat = mutual_info_score(list(nat_array.iloc[:,k]),list(nat_array.iloc[:,l]))
+            mi_nat = custom_mi(list(nat_array.iloc[:,k]),list(nat_array.iloc[:,l]), pseudocount=pseudocount)
             mi_nat_values.append(mi_nat)
 
     mi_nat_values_mean = np.average(mi_nat_values)
@@ -118,9 +182,13 @@ if MI_method == "within_MSA":
 
         output_df.append({"proposal_type":proposal_type, "n_mutations":n_mutations, "mean MI value": mi_nat_values_mean})
         
-        for _ in range(n_rounds):
+        for i in range(n_rounds):
 
             new_MSA = []
+
+            logging.info(f"Simulating round {i} of {proposal_type} proposal")
+
+            t1 = time()
 
             for i in range(len(old_MSA)):
 
@@ -143,7 +211,7 @@ if MI_method == "within_MSA":
 
                 for l in range(k + 1, sim_array.shape[1]):
 
-                    mi_sim = mutual_info_score(list(sim_array.iloc[:,k]),list(sim_array.iloc[:,l]))
+                    mi_sim = custom_mi(list(sim_array.iloc[:,k]),list(sim_array.iloc[:,l]), pseudocount=pseudocount)
 
                     mi_sim_values.append(mi_sim)
 
@@ -154,6 +222,10 @@ if MI_method == "within_MSA":
 
             old_MSA = new_MSA.copy()
             del new_MSA
+
+            t2 = time()
+
+            logging.info(f"Finished round {i} of {proposal_type} proposal. Time taken: {(t2 -t1)/60} minutes")
 
     output_df = pd.DataFrame(output_df)
 
@@ -167,9 +239,13 @@ elif MI_method == "corresponding_columns":
 
         n_mutations = 0
         
-        for _ in range(n_rounds):
+        for i in range(n_rounds):
 
             new_MSA = []
+
+            t1 = time()
+
+            logging.info(f"Simulating round {i} of {proposal_type} proposal")
 
             for i in range(len(old_MSA)):
 
@@ -189,7 +265,7 @@ elif MI_method == "corresponding_columns":
 
             for k in range(sim_array.shape[1]):
 
-                mi_sim = mutual_info_score(list(sim_array.iloc[:,k]),list(nat_array.iloc[:,k]))
+                mi_sim = custom_mi(list(sim_array.iloc[:,k]),list(nat_array.iloc[:,k]), pseudocount=pseudocount)
                 mi_sim_values.append(mi_sim)
 
             mi_sim_values_mean = np.average(mi_sim_values)
@@ -199,6 +275,10 @@ elif MI_method == "corresponding_columns":
 
             old_MSA = new_MSA.copy()
             del new_MSA
+
+            t2 = time()
+
+            logging.info(f"Finished round {i} of {proposal_type} proposal. Time taken: {(t2 -t1)/60} minutes")
 
     output_df = pd.DataFrame(output_df)
 
@@ -212,4 +292,4 @@ fig, axes = plt.subplots(ncols=1, nrows=1)
 sns.lineplot(data = output_df, x="n_mutations", y = "mean MI value", hue ="proposal_type" ,ax=axes)
 plt.legend()
 
-plt.savefig(f'MI_decay_msaprop_vs_randomprop_{MI_method}.png')
+plt.savefig(f'MI_decay_{MI_method}_pseudo_{pseudocount}_{n_sequences}_seqs.png')
