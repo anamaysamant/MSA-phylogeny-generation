@@ -119,7 +119,7 @@ FT_fam = args.FT_fam
 random = args.random
 path_to_HMM = args.path_to_HMM
 
-proposal_distributions = ["msa_prob_dist"]
+proposal_distributions = ["msa_prob_dist","random"]
 seed = args.seed
 
 np.random.seed(seed)
@@ -201,7 +201,8 @@ subprocess.run(['rm','hmm_table_processed.tsv'])
 for proposal_type in proposal_distributions:
 
     n_mutations = 0
-    
+    old_MSA = sampled_seqs.copy()
+
     for j in range(n_rounds):
 
         new_MSA = []
@@ -250,6 +251,20 @@ for proposal_type in proposal_distributions:
         if len(scores_table) > 0:
             scores_table["n_mutations"] = n_mutations
             scores_table["proposal_type"] = proposal_type
+
+            scored_seqs = list(scores_table["sequence_name"])
+            all_possible_seqs = [f"seq{i}" for i in range(n_sequences)]
+
+            add_df_entries = []
+
+            for seq in all_possible_seqs:
+                if seq not in scored_seqs:
+                    add_df_entries.append({"sequence_name":seq, "n_mutations":n_mutations, "proposal_type":proposal_type, "hmmer_seq_score": 0})
+
+            if len(add_df_entries) > 0:
+                add_df_entries = pd.DataFrame(add_df_entries)
+                scores_table = pd.concat([scores_table, add_df_entries]).reset_index(drop=True)
+
             final_hmmer_table = pd.concat([final_hmmer_table, scores_table]).reset_index(drop=True)
 
         subprocess.run(['rm','hmm_table_processed.tsv'])
@@ -260,9 +275,13 @@ for proposal_type in proposal_distributions:
         t2 = time()
 
         logging.info(f"Finished round {j} of {proposal_type} proposal. Time taken: {(t2 -t1)/60} minutes")
+    
+    Seq_tuples_to_fasta(old_MSA,f'MSA_hmmer_convergence_{seed}_{n_rounds*n_mutations_interval}_muts_{proposal_type}prop.fasta')
 
-final_hmmer_table.to_csv('hmmer_convergence.tsv', sep='\t', index=False)
+        
 
+
+final_hmmer_table.to_csv(f'hmmer_convergence_seed_{seed}_{n_rounds*n_mutations_interval}_muts.tsv', sep='\t', index=False)
 
 import seaborn as sns
 
@@ -271,6 +290,13 @@ fig, axes = plt.subplots(ncols=1, nrows=1)
 sns.lineplot(data = final_hmmer_table, x="n_mutations", y = "hmmer_seq_score", hue ="proposal_type", units="sequence_name", estimator=None ,ax=axes)
 plt.legend()
 
-plt.savefig(f'hmmer_convergence.png')
+plt.savefig(f'hmmer_convergence_seed_{seed}_{n_rounds*n_mutations_interval}_muts.png')
+
+fig, axes = plt.subplots(ncols=1, nrows=1)
+
+sns.lineplot(data = final_hmmer_table, x="n_mutations", y = "hmmer_seq_score", hue ="proposal_type",ax=axes)
+plt.legend()
+
+plt.savefig(f'hmmer_convergence_seed_{seed}_{n_rounds*n_mutations_interval}_muts_avg.png')
 
 

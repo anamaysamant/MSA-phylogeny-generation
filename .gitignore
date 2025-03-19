@@ -175,3 +175,4 @@ cython_debug/
 
 finetuned_MSA_models/
 */msa-seed-simulations-old/
+ProtMamba-Long-foundation/

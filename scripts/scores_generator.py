@@ -4,6 +4,7 @@ from aux_msa_functions import *
 import time
 from scipy.spatial.distance import cdist
 from Bio import Phylo
+from Levenshtein import distance
 
 def leaf_matcher(clade_root, all_syn_seqs, all_nat_seqs_dict):
 
@@ -124,9 +125,24 @@ if scores_table.shape[0] != 0:
     nat_seed_sequences_array = np.array([list(seq) for _,seq in nat_seed_sequences], dtype=np.bytes_).view(np.uint8)
     nat_full_sequences_array = np.array([list(seq) for _,seq in nat_full_sequences], dtype=np.bytes_).view(np.uint8)
 
-    distance_matrix_seed = cdist(sim_sequences_array, nat_seed_sequences_array, "hamming")
-    distance_matrix_full = cdist(sim_sequences_array, nat_full_sequences_array, "hamming")
+    try:
+        distance_matrix_seed = cdist(sim_sequences_array, nat_seed_sequences_array, "hamming")
+        distance_matrix_full = cdist(sim_sequences_array, nat_full_sequences_array, "hamming")
+    except:
+        distance_matrix_seed = np.zeros((len(scores_table["sequence"]),len(nat_seed_sequences)))
 
+        for i in range(len(scores_table["sequence"])):
+            for j in range(len(nat_seed_sequences)):
+                distance_matrix_seed[i][j] = distance(scores_table["sequence"][i],nat_seed_sequences[j][1])
+                distance_matrix_seed[i][j] /= np.max([len(scores_table["sequence"][i]),len(nat_seed_sequences[j][1])])
+
+        distance_matrix_full = np.zeros((len(scores_table["sequence"]),len(nat_full_sequences)))
+
+        for i in range(len(scores_table["sequence"])):
+            for j in range(len(nat_full_sequences)):
+                distance_matrix_full[i][j] = distance(scores_table["sequence"][i],nat_full_sequences[j][1])
+                distance_matrix_full[i][j] /= np.max([len(scores_table["sequence"][i]),len(nat_full_sequences[j][1])])
+                       
     min_natural_ham_distance_seed = list(distance_matrix_seed.min(axis = 1))
     max_natural_ham_distance_seed = list(distance_matrix_seed.max(axis = 1))
 

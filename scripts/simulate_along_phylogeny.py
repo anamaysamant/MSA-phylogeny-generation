@@ -14,8 +14,6 @@ from time import time
 import os
 
 import argparse
-import pyximport
-pyximport.install()
 
 from aux_msa_functions import *
 from MSAGeneratorESM import MSAGeneratorESM
@@ -25,6 +23,7 @@ from select_gpu import get_free_gpu
 work_dir = os.getcwd()
 os.chdir("./scripts")
 from MSA_phylogeny_class import Creation_MSA_Generation_MSA1b_Cython
+from ProtMamba_Phylogeny_class import ProtMamba_Simulator
 os.chdir(work_dir)
 
 import logging
@@ -208,7 +207,7 @@ elif tool == "ESM2":
     t1 = time()
 
     ESM_gen_obj = MSAGeneratorESM(number_of_nodes= len(all_seqs[0][1]), number_state_spin=21,
-                                batch_size=1,model="facebook/esm2_t6_8M_UR50D")
+                                batch_size=1,model="facebook/esm2_t33_650M_UR50D")
     
     if starting_seq_index == -1:
         print("x")
@@ -268,4 +267,38 @@ elif tool == "Potts":
 
     logging.info(f"Time taken to simulate along phylogeny using Potts: {(t2-t1)/60} minutes")
 
-    
+elif tool == "ProtMamba":
+
+    t1 = time()
+
+    if FT_fam != None:
+        model_to_use = torch.load(f"./finetuned_ProtMamba_models/MSA_finetuned_{FT_fam}.pt")
+
+    else:
+        model_to_use = None
+
+    if not no_phylogeny:
+        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs, full_tree = tree, full_tree_path = tree_path, 
+                                                         start_seq_index=starting_seq_index, model_to_use=model_to_use)
+    else:
+        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs, start_seq_index=starting_seq_index, model_to_use=model_to_use)
+
+    if not no_phylogeny:
+
+        if context_type == "dynamic":
+            logging.info(f"Simulating along phylogeny using ProtMamba ({context_type}-{context_sampling}-{context_size}-{proposal_type})")
+        else:
+            logging.info(f"Simulating along phylogeny using ProtMamba ({context_type}-{context_size}-{proposal_type})")
+
+        new_MSA = ProtMamba_obj.mamba_tree_phylo(tree.clade,flip_before_start=0, context_type = context_type, context_sampling = context_sampling, context_size = context_size, proposal = proposal_type)
+
+        t2 = time()
+
+        if context_type == "dynamic":
+            logging.info(f"Time taken to simulate along phylogeny using ProtMamba ({context_type}-{context_sampling}-{context_size}-{proposal_type}): {(t2-t1)/60} minutes")
+        else:
+            logging.info(f"Time taken to simulate along phylogeny using ProtMamba ({context_type}-{context_size}-{proposal_type}): {(t2-t1)/60} minutes")
+    else:
+        new_MSA = ProtMamba_obj.mamba_no_phylo(context_size = context_size, n_sequences = n_sequences,n_mutations = n_mutations, proposal = proposal_type)
+
+    Seq_tuples_to_fasta(new_MSA,output)

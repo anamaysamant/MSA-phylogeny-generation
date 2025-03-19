@@ -9,11 +9,6 @@ from scipy.spatial.distance import squareform, pdist, cdist
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 
-
-import argparse
-import pyximport
-pyximport.install()
-
 deletekeys = dict.fromkeys(string.ascii_lowercase)
 deletekeys["."] = None
 deletekeys["*"] = None

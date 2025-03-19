@@ -19,7 +19,7 @@ os.chdir(work_dir)
 import os
 from time import time
 
-os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu())
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 def custom_mi(values_1, values_2, domain_1 = list("-ACDEFGHIKLMNPQRSTVWY"), domain_2 = list("-ACDEFGHIKLMNPQRSTVWY"), pseudocount = 0):
 
@@ -59,7 +59,7 @@ def custom_mi(values_1, values_2, domain_1 = list("-ACDEFGHIKLMNPQRSTVWY"), doma
             probs_elem_2 = values_2_counts[elem_2] / total_counts
             joint_probs = joint_counts[(elem_1, elem_2)] / total_counts
 
-            if probs_elem_1 > 0 and probs_elem_2 > 0:
+            if joint_probs > 0:
                 mi += joint_probs * np.log(joint_probs/(probs_elem_1 * probs_elem_2))
 
 
@@ -135,18 +135,6 @@ logging.basicConfig(
 
 all_seqs = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(input_MSA, "fasta")]
 
-if random:
-    char_list = list("-ACDEFGHIKLMNPQRSTVWY")
-    sampled_seqs = []
-    for i in range(n_sequences):
-        rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs[0][1]), replace = True)
-        rand_seq = [char_list[i] for i in rand_char_order]
-        rand_seq = ''.join(rand_seq)
-        sampled_seqs.append((f'seq{i}',rand_seq))
-else:
-    sampled_seq_inds = np.random.choice(range(len(all_seqs)), n_sequences, replace=False)
-    sampled_seqs = [all_seqs[i] for i in sampled_seq_inds]
-
 if FT_fam != None:
     model_to_use = torch.load(f"./finetuned_MSA_models/MSA_finetuned_{FT_fam}.pt")
 
@@ -158,74 +146,90 @@ masked = True
 
 output_df = []
 
-nat_array = pd.DataFrame([list(seq[1]) for seq in sampled_seqs])
-mi_nat_values = []
+
 
 logging.info(f"Using {MI_method} for MI decay analysis")
 
 if MI_method == "within_MSA":
 
-    for k in range(nat_array.shape[1]):
+    for sim_ind in range(5):
 
-        for l in range(k + 1, nat_array.shape[1]):
+        if random:
+            char_list = list("-ACDEFGHIKLMNPQRSTVWY")
+            sampled_seqs = []
+            for i in range(n_sequences):
+                rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs[0][1]), replace = True)
+                rand_seq = [char_list[i] for i in rand_char_order]
+                rand_seq = ''.join(rand_seq)
+                sampled_seqs.append((f'seq{i}',rand_seq))
+        else:
+            sampled_seq_inds = np.random.choice(range(len(all_seqs)), n_sequences, replace=False)
+            sampled_seqs = [all_seqs[i] for i in sampled_seq_inds]
 
-            mi_nat = custom_mi(list(nat_array.iloc[:,k]),list(nat_array.iloc[:,l]), pseudocount=pseudocount)
-            mi_nat_values.append(mi_nat)
+        nat_array = pd.DataFrame([list(seq[1]) for seq in sampled_seqs])
+        mi_nat_values = []
 
-    mi_nat_values_mean = np.average(mi_nat_values)
+        for k in range(nat_array.shape[1]):
 
-    old_MSA = sampled_seqs.copy()
+            for l in range(k + 1, nat_array.shape[1]):
 
-    for proposal_type in proposal_distributions:
+                mi_nat = custom_mi(list(nat_array.iloc[:,k]),list(nat_array.iloc[:,l]), pseudocount=pseudocount)
+                mi_nat_values.append(mi_nat)
 
-        n_mutations = 0
+        mi_nat_values_mean = np.average(mi_nat_values)
 
-        output_df.append({"proposal_type":proposal_type, "n_mutations":n_mutations, "mean MI value": mi_nat_values_mean})
-        
-        for i in range(n_rounds):
+        old_MSA = sampled_seqs.copy()
 
-            new_MSA = []
+        for proposal_type in proposal_distributions:
 
-            logging.info(f"Simulating round {i} of {proposal_type} proposal")
+            n_mutations = 0
+            
+            output_df.append({"proposal_type":proposal_type, "n_mutations":n_mutations, "mean MI value": mi_nat_values_mean, "sim_ind":sim_ind})
+            old_MSA = sampled_seqs.copy()
 
-            t1 = time()
+            for i in range(n_rounds):
 
-            for i in range(len(old_MSA)):
+                new_MSA = []
 
-                np.random.seed(seed)
+                logging.info(f"Simulating round {i} of {proposal_type} proposal")
 
-                all_seqs[0] = old_MSA[i]
-                MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=0, model_to_use=model_to_use)
+                t1 = time()
 
-                new_MSA_seq = MSA_gen_obj.msa_no_phylo(context_size = context_size, n_sequences = 1,n_mutations = n_mutations_interval, method=method, 
-                                                    masked=masked, proposal = proposal_type)
-                
-                
-                new_MSA.append((f"seq{i}",new_MSA_seq[0][1]))
+                for i in range(len(old_MSA)):
 
-            sim_array = pd.DataFrame([list(seq[1]) for seq in new_MSA]) 
 
-            mi_sim_values = []
+                    all_seqs[0] = old_MSA[i]
+                    MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=0, model_to_use=model_to_use, seed=seed)
 
-            for k in range(sim_array.shape[1]):
+                    new_MSA_seq = MSA_gen_obj.msa_no_phylo(context_size = context_size, n_sequences = 1,n_mutations = n_mutations_interval, method=method, 
+                                                        masked=masked, proposal = proposal_type)
+                    
+                    
+                    new_MSA.append((f"seq{i}",new_MSA_seq[0][1]))
 
-                for l in range(k + 1, sim_array.shape[1]):
+                sim_array = pd.DataFrame([list(seq[1]) for seq in new_MSA]) 
 
-                    mi_sim = custom_mi(list(sim_array.iloc[:,k]),list(sim_array.iloc[:,l]), pseudocount=pseudocount)
+                mi_sim_values = []
 
-                    mi_sim_values.append(mi_sim)
+                for k in range(sim_array.shape[1]):
 
-            mi_sim_values_mean = np.average(mi_sim_values)
-            n_mutations += n_mutations_interval
+                    for l in range(k + 1, sim_array.shape[1]):
 
-            output_df.append({"proposal_type":proposal_type, "n_mutations":n_mutations, "mean MI value": mi_sim_values_mean})
+                        mi_sim = custom_mi(list(sim_array.iloc[:,k]),list(sim_array.iloc[:,l]), pseudocount=pseudocount)
 
-            old_MSA = new_MSA.copy()
-            del new_MSA
+                        mi_sim_values.append(mi_sim)
 
-            t2 = time()
+                mi_sim_values_mean = np.average(mi_sim_values)
+                n_mutations += n_mutations_interval
 
-            logging.info(f"Finished round {i} of {proposal_type} proposal. Time taken: {(t2 -t1)/60} minutes")
+                output_df.append({"proposal_type":proposal_type, "n_mutations":n_mutations, "mean MI value": mi_sim_values_mean, "sim_ind":sim_ind})
+
+                old_MSA = new_MSA.copy()
+                del new_MSA
+
+                t2 = time()
+
+                logging.info(f"Finished round {i} of {proposal_type} proposal. Time taken: {(t2 -t1)/60} minutes")
 
     output_df = pd.DataFrame(output_df)
 
@@ -233,56 +237,73 @@ if MI_method == "within_MSA":
 
 elif MI_method == "corresponding_columns":
 
-    old_MSA = sampled_seqs.copy()
+    for sim_ind in range(5):
 
-    for proposal_type in proposal_distributions:
+        if random:
+            char_list = list("-ACDEFGHIKLMNPQRSTVWY")
+            sampled_seqs = []
+            for i in range(n_sequences):
+                rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs[0][1]), replace = True)
+                rand_seq = [char_list[i] for i in rand_char_order]
+                rand_seq = ''.join(rand_seq)
+                sampled_seqs.append((f'seq{i}',rand_seq))
+        else:
+            sampled_seq_inds = np.random.choice(range(len(all_seqs)), n_sequences, replace=False)
+            sampled_seqs = [all_seqs[i] for i in sampled_seq_inds]
 
-        n_mutations = 0
-        
-        for i in range(n_rounds):
+        nat_array = pd.DataFrame([list(seq[1]) for seq in sampled_seqs])
+        mi_nat_values = []
 
-            new_MSA = []
+        for proposal_type in proposal_distributions:
 
-            t1 = time()
+            n_mutations = 0
+            old_MSA = sampled_seqs.copy()
+            
+            for j in range(n_rounds):
 
-            logging.info(f"Simulating round {i} of {proposal_type} proposal")
 
-            for i in range(len(old_MSA)):
+                t1 = time()
 
-                np.random.seed(seed)
+                logging.info(f"Simulating round {j} of {proposal_type} proposal")
 
-                all_seqs[0] = old_MSA[i]
-                MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=0, model_to_use=model_to_use)
+                new_MSA = []
 
-                new_MSA_seq = MSA_gen_obj.msa_no_phylo(context_size = context_size, n_sequences = 1,n_mutations = n_mutations_interval, method=method, 
-                                                    masked=masked, proposal = proposal_type)
-                
-                new_MSA.append((f"seq{i}",new_MSA_seq[0][1]))
+                for i in range(len(old_MSA)):
 
-            sim_array = pd.DataFrame([list(seq[1]) for seq in new_MSA]) 
+                    all_seqs[0] = old_MSA[i]
+                    MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=0, model_to_use=model_to_use, seed=seed)
 
-            mi_sim_values = []
+                    new_MSA_seq = MSA_gen_obj.msa_no_phylo(context_size = context_size, n_sequences = 1,n_mutations = n_mutations_interval, method=method, 
+                                                        masked=masked, proposal = proposal_type)
+                    
+                    new_MSA.append((f"seq{i}",new_MSA_seq[0][1]))
 
-            for k in range(sim_array.shape[1]):
+                sim_array = pd.DataFrame([list(seq[1]) for seq in new_MSA]) 
 
-                mi_sim = custom_mi(list(sim_array.iloc[:,k]),list(nat_array.iloc[:,k]), pseudocount=pseudocount)
-                mi_sim_values.append(mi_sim)
+                mi_sim_values = []
 
-            mi_sim_values_mean = np.average(mi_sim_values)
-            n_mutations += n_mutations_interval
+                for k in range(sim_array.shape[1]):
 
-            output_df.append({"proposal_type":proposal_type, "n_mutations":n_mutations, "mean MI value": mi_sim_values_mean})
+                    mi_sim = custom_mi(list(sim_array.iloc[:,k]),list(nat_array.iloc[:,k]), pseudocount=pseudocount)
+                    mi_sim_values.append(mi_sim)
 
-            old_MSA = new_MSA.copy()
-            del new_MSA
+                mi_sim_values_mean = np.average(mi_sim_values)
+                n_mutations += n_mutations_interval
 
-            t2 = time()
+                print(mi_sim_values_mean)
 
-            logging.info(f"Finished round {i} of {proposal_type} proposal. Time taken: {(t2 -t1)/60} minutes")
+                output_df.append({"proposal_type":proposal_type, "n_mutations":n_mutations, "mean MI value": mi_sim_values_mean, "sim_ind":sim_ind})
+
+                old_MSA = new_MSA.copy()
+                del new_MSA
+
+                t2 = time()
+
+                logging.info(f"Finished round {j} of {proposal_type} proposal. Time taken: {(t2 -t1)/60} minutes")
 
     output_df = pd.DataFrame(output_df)
 
-    output_df.to_csv('MI_decay_df_corr_cols.tsv', sep='\t', index=False)
+    output_df.to_csv(f'MI_decay_df_corr_cols_pseudo_{pseudocount}_nseqs_{n_sequences}.tsv', sep='\t', index=False)
 
 
 import seaborn as sns
@@ -292,4 +313,4 @@ fig, axes = plt.subplots(ncols=1, nrows=1)
 sns.lineplot(data = output_df, x="n_mutations", y = "mean MI value", hue ="proposal_type" ,ax=axes)
 plt.legend()
 
-plt.savefig(f'MI_decay_{MI_method}_pseudo_{pseudocount}_{n_sequences}_seqs.png')
+plt.savefig(f'MI_decay_{MI_method}_pseudo_{pseudocount}_{n_sequences}_seqs_interval_{n_mutations_interval}.png')

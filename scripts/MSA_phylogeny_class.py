@@ -1,10 +1,6 @@
 import numpy as np
 import torch
 import esm
-# from msa_light import MSATransformer
-# from msa_lm_head import MSATransformer_lm_head
-# from tokenization import Vocab
-from ete3 import Tree
 from Bio import Phylo
 import os
 from scipy.spatial.distance import squareform, pdist, cdist
@@ -18,6 +14,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
         torch.cuda.empty_cache()
 
+        self.seed = seed
         self.original_MSA = MSA
         self.start_seq_name = MSA[0][0]
         self.full_tree = full_tree
@@ -150,22 +147,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
         return log_total_prob
 
-    def generate_subtree(self,leaves):
-        
-        MRCA = self.full_tree.common_ancestor(leaves)
-        
-        t = Tree(self.full_tree_path)
-        t.prune(leaves, preserve_branch_length=True)
-        t.write(outfile='temp_sub.tree')
-        
-        subtree = Phylo.read("temp_sub.tree","newick")
-        os.remove("temp_sub.tree")
-        
-        if self.full_tree.distance(MRCA.root) != 0:
-            subtree.clade.branch_length = self.full_tree.distance(MRCA.root)
-
-        return subtree
-
     def msa_tree_phylo(self, clade_root, method, masked, context_type, 
                         context_size, context_sampling, proposal, flip_before_start = 0):
                 
@@ -188,41 +169,6 @@ class Creation_MSA_Generation_MSA1b_Cython:
         self.init_seq = None
         
         return results
-
-    def msa_tree_phylo_chunked(self, total_sequences, sequences_per_iteration, method, masked, proposal):
-
-        phylogeny_MSA_chunked = []
-
-        all_sequences = self.original_MSA.copy()
-        number_of_iterations = int(total_sequences/sequences_per_iteration)
-
-        for i in range(number_of_iterations):
-
-            selected_sequences = greedy_select(all_sequences, num_seqs=sequences_per_iteration)
-            selected_sequences_names = [elem[0] for elem in selected_sequences]
-            not_selected_sequences_ind = [i for i in range(len(all_sequences)) if all_sequences[i][0] not in selected_sequences_names]
-
-            tree = self.generate_subtree(selected_sequences_names)
-            
-            _,_,self.context = self.batch_converter([selected_sequences[1:]])
-            self.context = self.context.to(self.device)
-        
-            _,_,self.init_seq = self.batch_converter([selected_sequences[:1]])
-            self.init_seq = self.init_seq.to(self.device)
-
-            if tree.clade.branch_length != None:
-                flip_before_start = tree.clade.branch_length*self.n_cols
-            else:
-                flip_before_start = 0
-                
-            simulated_chunk_seqs = self.msa_tree_phylo(tree.clade, flip_before_start=flip_before_start, method=method, masked=masked, 
-                                                        context_type = "static", proposal=proposal)
-            phylogeny_MSA_chunked += simulated_chunk_seqs
-
-            all_seq_copy = all_sequences.copy()
-            all_sequences = [all_seq_copy[i] for i in not_selected_sequences_ind]
-
-        return phylogeny_MSA_chunked
     
     def msa_tree_phylo_recur(self, clade_root, previous_sequence_tokens, method, masked, proposal):
         
@@ -392,7 +338,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
             print(f"Number of proposals: {proposals}")
 
-        elif proposal == "msa_prob_dist":
+        elif proposal == "logits":
 
             previous_tokens_for_ham_dist = previous_sequence_tokens.squeeze(0).cpu().numpy()
 

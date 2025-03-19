@@ -6,7 +6,7 @@ CONTEXT_SAMPLINGS = ["greedy","random"]
 PROPOSAL_TYPES = ["msa_prob_dist","random"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
-INIT_SEQS = ["-1"]
+INIT_SEQS = ["0"]
 
 N_MUTATIONS_START = 500
 N_MUTATIONS_END = ["1000"]
@@ -30,19 +30,36 @@ rule all:
         # expand("data/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-a2m/{fam}-{sim_ind}.a2m",
         #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
         #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS_END, 
-                context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
+        # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS_END, 
+        #         context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
+        expand("data/msa-{msa_type}-simulation-trees/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.newick",
+                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+                fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("data/msa-{msa_type}-simulation-trees/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.newick",
+                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
 
-# rule generate_tree:
-#     input:
-#         "data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta"
-#     output:
-#         "data/{msa_type}-trees/{fam}_{msa_type}.newick"
-#     log:
-#         "logs/generate-{msa_type}-trees/{fam}.log"
-#     shell:
-#         "FastTree {input} > {output}"
+
+rule generate_tree_MSA_static:
+    input:
+        "data/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    output:
+        "data/msa-{msa_type}-simulation-trees/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.newick"
+    log:
+        "logs/msa-{msa_type}-simulation-trees/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.log"
+    shell:
+        "FastTree {input} > {output}"
+
+rule generate_tree_MSA_dynamic:
+    input:
+        "data/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.fasta"
+    output:
+        "data/msa-{msa_type}-simulation-trees/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.newick"
+    log:
+        "logs/msa-{msa_type}-simulation-trees/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.log"
+    shell:
+        "FastTree {input} > {output}"
 
 rule root_tree:
     input:

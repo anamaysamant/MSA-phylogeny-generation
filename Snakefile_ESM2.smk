@@ -1,6 +1,6 @@
 FAMILIES = ["PF00004"]
 MSA_TYPES = ["seed"]
-INIT_SEQS = ["0","-1"]
+INIT_SEQS = ["0"]
 
 num_simulations = 10
 
@@ -9,7 +9,7 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
-        expand("scores/msa-{msa_type}-simulations/ESM2/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tsv",
+        expand("scores/msa-{msa_type}-simulations/ESM2-33T-650M/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tsv",
                 msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
         
 # rule generate_tree:
@@ -35,7 +35,7 @@ rule simulate_along_phylogeny_ESM2:
         MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
     output:
-        "data/msa-{msa_type}-simulations/ESM2/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.fasta"
+        "data/msa-{msa_type}-simulations/ESM2-33T-650M/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.fasta"
     shell:
         """
         python scripts/simulate_along_phylogeny.py --output {output} --input_MSA {input.MSA} --input_tree {input.tree} \
@@ -46,16 +46,16 @@ rule generate_scores_ESM2:
     input:
         original_MSA_seed="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
         original_MSA_full="data/protein-families-msa-full/{fam}.fasta",
-        simulated_MSA="data/msa-{msa_type}-simulations/ESM2/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.fasta",
+        simulated_MSA="data/msa-{msa_type}-simulations/ESM2-33T-650M/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.fasta",
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick",
         hmm="data/protein-families-hmms/{fam}.hmm",
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
         h_params="data/protein-families-DCA-params/{fam}_h.npy"
 
     output:
-        ungapped_seq=temp("data/msa-{msa_type}-simulations/ESM2/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}-ungapped.fasta"),
-        hmm_table=temp("scores/msa-{msa_type}-simulations/ESM2/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tbl"),
-        score_table="scores/msa-{msa_type}-simulations/ESM2/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tsv"
+        ungapped_seq=temp("data/msa-{msa_type}-simulations/ESM2-33T-650M/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}-ungapped.fasta"),
+        hmm_table=temp("scores/msa-{msa_type}-simulations/ESM2-33T-650M/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tbl"),
+        score_table="scores/msa-{msa_type}-simulations/ESM2-33T-650M/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tsv"
     shell:
        """
         seqkit replace -s -p "-" -r "" {input.simulated_MSA} > {output.ungapped_seq}
