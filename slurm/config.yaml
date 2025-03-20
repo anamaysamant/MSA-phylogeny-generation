@@ -1,0 +1,3 @@
+cluster: "sbatch --time=15:00 --gpus=1
+          --account=upbitbol --partition=h100"
+jobs: 20

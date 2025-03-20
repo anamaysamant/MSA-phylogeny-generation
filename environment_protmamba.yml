@@ -1,5 +1,7 @@
 name: prot-mamba
 channels:
+  - bioconda
+  - nvidia/label/cuda-12.1.0
   - defaults
   - https://repo.anaconda.com/pkgs/main
   - https://repo.anaconda.com/pkgs/r
@@ -8,6 +10,8 @@ dependencies:
   - _openmp_mutex=5.1=1_gnu
   - bzip2=1.0.8=h5eee18b_6
   - ca-certificates=2025.2.25=h06a4308_0
+  - cuda-nvcc=12.1.66=0
+  - hmmer=3.3.2=h87f3376_2
   - ld_impl_linux-64=2.40=h12ee557_0
   - libffi=3.4.4=h6a678d5_1
   - libgcc-ng=11.2.0=h1234567_1
@@ -19,6 +23,7 @@ dependencies:
   - pip=25.0=py310h06a4308_0
   - python=3.10.14=h955ad1f_1
   - readline=8.2=h5eee18b_0
+  - seqkit=2.10.0=h9ee0642_0
   - setuptools=75.8.0=py310h06a4308_0
   - sqlite=3.45.3=h5eee18b_0
   - tk=8.6.14=h39e8969_0

@@ -1,7 +1,7 @@
 FAMILIES = ["PF00004"]
 MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static","dynamic"]
-CONTEXT_SIZES = ["200"]
+CONTEXT_SIZES = ["10"]
 CONTEXT_SAMPLINGS = ["greedy","random"]
 PROPOSAL_TYPES = ["logits"]
 N_MUTATIONS = ["500"]
@@ -18,9 +18,9 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
-        # expand("scores/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.tsv",
-        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
-        #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("scores/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.tsv",
+                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+                fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         expand("scores/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.tsv",
                 msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
                 sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
@@ -132,6 +132,8 @@ rule simulate_along_phylogeny_ProtMamba_static:
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
     output:
         "data/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    resources:
+        nvidia_gpu=1
     log:
         "logs/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.log"
     shell:
@@ -147,6 +149,8 @@ rule simulate_along_phylogeny_ProtMamba_dynamic:
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
     output:
         "data/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.fasta"
+    resources:
+        nvidia_gpu=1
     log:
         "logs/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.log"
     shell:
