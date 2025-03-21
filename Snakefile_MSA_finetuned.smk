@@ -3,7 +3,7 @@ MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static","dynamic"]
 CONTEXT_SIZES = ["10"]
 CONTEXT_SAMPLINGS = ["greedy","random"]
-PROPOSAL_TYPES = ["msa_prob_dist","random"]
+PROPOSAL_TYPES = ["logits","random"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
 INIT_SEQS = ["0","-1"]
@@ -49,6 +49,8 @@ rule simulate_along_phylogeny_MSA_finetuned_static:
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
     output:
         "data/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    resources:
+        nvidia_gpu=1
     log:
         "logs/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.log"
     shell:
@@ -65,6 +67,8 @@ rule simulate_along_phylogeny_MSA_finetuned_dynamic:
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
     output:
         "data/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.fasta"
+    resources:
+        nvidia_gpu=1
     log:
         "logs/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.log"
     shell:
@@ -125,6 +129,8 @@ rule simulate_without_phylogeny_MSA_finetuned:
         MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
     output:
         "data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    resources:
+        nvidia_gpu=1
     log:
         "logs/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.log"
     shell:
@@ -140,6 +146,8 @@ rule simulate_without_phylogeny_extended_MSA_finetuned:
         simulated_MSA="data/no-phylogeny/500-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta",
     output:
         "data/no-phylogeny/{n_mutations_end}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b-finetuned-{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    resources:
+        nvidia_gpu=1
     params:
         n_mutations_start="500"
     log:

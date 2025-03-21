@@ -4,7 +4,11 @@ from aux_msa_functions import *
 import time
 from scipy.spatial.distance import cdist
 from Bio import Phylo
-from Levenshtein import distance
+
+try:
+    from Levenshtein import distance
+except:
+    pass
 
 def leaf_matcher(clade_root, all_syn_seqs, all_nat_seqs_dict):
 

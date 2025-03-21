@@ -20,12 +20,6 @@ from MSAGeneratorESM import MSAGeneratorESM
 from MSAGeneratorPottsModel import MSAGeneratorPottsModel
 from select_gpu import get_free_gpu
 
-work_dir = os.getcwd()
-os.chdir("./scripts")
-from MSA_phylogeny_class import Creation_MSA_Generation_MSA1b_Cython
-from ProtMamba_Phylogeny_class import ProtMamba_Simulator
-os.chdir(work_dir)
-
 import logging
 import os
 
@@ -116,6 +110,15 @@ n_sequences = args.n_sequences
 seed = args.seed
 FT_fam = args.FT_fam
 log_file = args.log_file
+
+work_dir = os.getcwd()
+os.chdir("./scripts")
+from MSA_phylogeny_class import Creation_MSA_Generation_MSA1b_Cython
+
+if tool == "ProtMamba":
+    from ProtMamba_Phylogeny_class import ProtMamba_Simulator
+    
+os.chdir(work_dir)
 
 logging.basicConfig(
     filename=log_file,               
