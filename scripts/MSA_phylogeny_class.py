@@ -31,6 +31,8 @@ class Creation_MSA_Generation_MSA1b_Cython:
             self.model = model_to_use
             del model_to_use
 
+            torch.cuda.empty_cache()
+
         self.model = self.model.to(self.device)
 
 
@@ -70,7 +72,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
 
             if method == "greedy":
 
-                context = greedy_select(all_sequences, num_seqs = context_size + 1, seed = self.seed)
+                context = greedy_select(all_sequences, num_seqs = context_size + 1, seed = self.seed, random_start=False)
                 context = context[1:]
 
                 _,_,self.context = self.batch_converter([context])

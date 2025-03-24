@@ -1,9 +1,9 @@
 FAMILIES = ["PF00004"]
 MSA_TYPES = ["seed"]
-CONTEXT_TYPES = ["static","dynamic"]
-CONTEXT_SIZES = ["100"]
+CONTEXT_TYPES = ["static"]
+CONTEXT_SIZES = ["10"]
 CONTEXT_SAMPLINGS = ["greedy","random"]
-PROPOSAL_TYPES = ["logits","random"]
+PROPOSAL_TYPES = ["logits"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
 INIT_SEQS = ["0"]
@@ -15,6 +15,11 @@ num_simulations = 10
 
 SIM_INDS = list(range(1,num_simulations+1))
 SIM_INDS = list(map(str,SIM_INDS))
+
+MUTATION_INTERVALS = ["20"]
+N_SEQUENCES_MI = ["25"]
+START_SEQS = ["sampled"]
+N_ROUNDS = ["50"]
 
 rule all:
     input:
@@ -39,6 +44,9 @@ rule all:
         # expand("data/msa-{msa_type}-simulation-trees/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.newick",
         #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
         #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta",
+                mutation_interval=MUTATION_INTERVALS, n_sequences_MI = N_SEQUENCES_MI,msa_type = MSA_TYPES, start_seqs = START_SEQS, 
+                proposal_type = PROPOSAL_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, sim_ind = SIM_INDS,n_rounds = N_ROUNDS)
 
 
 rule generate_tree_MSA_static:
@@ -128,6 +136,22 @@ rule simulate_without_phylogeny_extended_MSA:
         """
 
 
+rule simulate_for_MI_decorrelation_MSA:
+    input:
+        MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+    output:
+        "data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+    resources:
+        nvidia_gpu=1
+    log:
+        "logs/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.log"
+    shell:
+        """
+        python scripts/gen_MI_decay_MSA.py  --output {output} --input_MSA {input.MSA} --context_size {wildcards.context_size}  \
+        --proposal_type {wildcards.proposal_type} --seed {wildcards.sim_ind} --n_mutations_interval {wildcards.mutation_interval} \
+         --n_sequences {wildcards.n_sequences_MI} --n_rounds {wildcards.n_rounds} --start_seqs {wildcards.start_seqs}
+        """
+
 rule simulate_along_phylogeny_MSA_static:
     input:
         MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
@@ -160,19 +184,6 @@ rule simulate_along_phylogeny_MSA_dynamic:
         python scripts/simulate_along_phylogeny.py --tool MSA_1b --output {output} --input_MSA {input.MSA} --input_tree {input.tree} \
         --context_type dynamic --context_size {wildcards.context_size} --context_sampling {wildcards.context_sampling} \
         --proposal_type {wildcards.proposal_type} --seed {wildcards.sim_ind} --start_seq_index {wildcards.init_seq} --log_file {log}
-        """
-
-rule simulate_along_phylogeny_MSA_chunked:
-    input:
-        MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
-        tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
-    output:
-        "data/msa-{msa_type}-simulations/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/static-context/chunked/{context_size}/{fam}/{fam}-{sim_ind}.fasta"
-    shell:
-        """
-        python scripts/simulate_along_phylogeny.py --output {output} --input_MSA {input.MSA} --input_tree {input.tree} \
-        --tool MSA-1b --context_type static --context_size {wildcards.context_size} --chunked --seed {wildcards.sim_ind} \
-        --proposal_type {wildcards.proposal_type} --start_seq_index {wildcards.init_seq} --log_file {log}
         """
 
 rule generate_scores_MSA_static:
