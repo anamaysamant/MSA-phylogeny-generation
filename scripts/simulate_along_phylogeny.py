@@ -2,6 +2,7 @@ from typing import List, Tuple, Optional, Dict, NamedTuple, Union, Callable
 import string
 from pathlib import Path
 import sys
+import esm
 
 import numpy as np
 from Bio import SeqIO, Phylo
@@ -142,17 +143,19 @@ if tool == "MSA_1b":
 
     t1 = time()
 
+    _, alphabet = esm.pretrained.esm_msa1b_t12_100M_UR50S()
+
     if FT_fam != None:
         model_to_use = torch.load(f"./finetuned_MSA_models/MSA_finetuned_{FT_fam}.pt")
 
     else:
-        model_to_use = None
+        model_to_use, _ = esm.pretrained.esm_msa1b_t12_100M_UR50S()
 
     if not no_phylogeny:
         MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, full_tree = tree, full_tree_path = tree_path, 
-                                                         start_seq_index=starting_seq_index, model_to_use=model_to_use)
+                                                         start_seq_index=starting_seq_index, model_to_use=model_to_use, alphabet=alphabet)
     else:
-        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=starting_seq_index, model_to_use=model_to_use)
+        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=starting_seq_index, model_to_use=model_to_use, alphabet=alphabet)
 
     method = "minimal"
     masked = True

@@ -10,7 +10,7 @@ from aux_msa_functions import greedy_select
 
 class Creation_MSA_Generation_MSA1b_Cython:
     
-    def __init__(self, MSA, model_to_use = None, start_seq_index = 0,full_tree = None, full_tree_path = None, random_init_seq = False, seed = None):
+    def __init__(self, MSA, model_to_use = None, alphabet = None, start_seq_index = 0,full_tree = None, full_tree_path = None, random_init_seq = False, seed = None):
 
         torch.cuda.empty_cache()
 
@@ -24,14 +24,12 @@ class Creation_MSA_Generation_MSA1b_Cython:
         self.n_rows = len(self.original_MSA)
         self.n_cols = len(self.original_MSA[0][1])
         
-        self.model, self.alphabet = esm.pretrained.esm_msa1b_t12_100M_UR50S()
-
-        if model_to_use != None:
-            del self.model
+        if model_to_use == None:
+            self.model, self.alphabet = esm.pretrained.esm_msa1b_t12_100M_UR50S()
+        else:
             self.model = model_to_use
-            del model_to_use
-
-            torch.cuda.empty_cache()
+            self.alphabet = alphabet
+            del model_to_use, alphabet
 
         self.model = self.model.to(self.device)
 

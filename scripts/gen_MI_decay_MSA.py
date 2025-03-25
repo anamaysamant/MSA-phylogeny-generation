@@ -91,11 +91,11 @@ logging.basicConfig(
 
 all_seqs = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(input_MSA, "fasta")]
 
+model_to_use, alphabet = esm.pretrained.esm_msa1b_t12_100M_UR50S()
+
 if FT_fam != None:
     model_to_use = torch.load(f"./finetuned_MSA_models/MSA_finetuned_{FT_fam}.pt")
 
-else:
-    model_to_use, _ = esm.pretrained.esm_msa1b_t12_100M_UR50S()
 
 method = "minimal"
 masked = True
@@ -135,7 +135,7 @@ for j in range(1, n_rounds + 1):
 
         seq_name = old_MSA[i][0]
         all_seqs[0] = old_MSA[i]
-        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=0, model_to_use=model_to_use, seed=seed)
+        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=0, model_to_use=model_to_use, alphabet = alphabet, seed=seed)
 
         new_MSA_seq = MSA_gen_obj.msa_no_phylo(context_size = context_size, n_sequences = 1,n_mutations = n_mutations_interval, method=method, 
                                             masked=masked, proposal = proposal_type)
