@@ -1,3 +1,3 @@
-cluster: "sbatch --time=1:00:00 --gpus=1
-          --account=upbitbol --partition=h100"
-jobs: 40
+cluster: "sbatch --time=3:00:00 --gpus=1
+          --account=upbitbol --partition=l40s"
+jobs: 1

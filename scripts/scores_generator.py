@@ -4,11 +4,28 @@ from aux_msa_functions import *
 import time
 from scipy.spatial.distance import cdist
 from Bio import Phylo
+import torch
+import esm
+import biotite.structure.io as bsio
+import subprocess
 
 try:
     from Levenshtein import distance
 except:
     pass
+
+def calc_plddt_score(sequence,pdb_path):
+
+    with torch.no_grad():
+        pdb_file = model.infer_pdb(sequence)
+
+    with open(pdb_path, "w") as f:
+        f.write(output)
+
+    struct = bsio.load_structure(pdb_path, extra_fields=["b_factor"])
+    subprocess.run(['rm',pdb_path])
+    return struct.b_factor.mean()  # this will be the pLDDT
+
 
 def leaf_matcher(clade_root, all_syn_seqs, all_nat_seqs_dict):
 
@@ -55,6 +72,9 @@ parser.add_argument("--original_MSA_full", action="store", dest="original_MSA_fu
 parser.add_argument("-O", "--output", action="store", dest="output", 
                     help="processed hmmer table")
 
+parser.add_argument("--pdb_path", action="store", dest="pdb_path", 
+                    help="processed hmmer table")
+
 parser.add_argument("--no_phylogeny", action="store_true", dest="no_phylogeny",
                     help="do not evolve along a tree")
 
@@ -69,6 +89,7 @@ J_params = args.J_params
 h_params = args.h_params
 tree_path = args.tree
 no_phylogeny = args.no_phylogeny
+pdb_path = args.pdb_path
 
 if not no_phylogeny:
     tree = Phylo.read(tree_path,"newick")
@@ -163,6 +184,19 @@ if scores_table.shape[0] != 0:
     max_self_ham_distance = list(self_distance_matrix.max(axis = 1))
 
     scores_table["max_self_ham_distance"] = max_self_ham_distance
+
+    model = esm.pretrained.esmfold_v1()
+    model = model.eval().cuda()
+
+    plddt_scores = []
+
+    for i,sequence in enumerate(scores_table["sequence"]):
+
+        sequence = sequence.replace("-","")
+        plddt_score = calc_plddt_score(sequence, pdb_path=f"{output}-seq{i}.pdb")
+        plddt_scores.append(plddt_score)
+
+    scores_table["plddt_scores"] = plddt_scores
 
 scores_table.to_csv(output, sep="\t", index = False)
 

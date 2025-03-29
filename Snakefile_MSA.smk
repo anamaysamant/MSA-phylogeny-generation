@@ -3,7 +3,7 @@ MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static"]
 CONTEXT_SIZES = ["10"]
 CONTEXT_SAMPLINGS = ["greedy","random"]
-PROPOSAL_TYPES = ["logits"]
+PROPOSAL_TYPES = ["logits","random"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
 INIT_SEQS = ["0"]
@@ -17,9 +17,10 @@ SIM_INDS = list(range(1,num_simulations+1))
 SIM_INDS = list(map(str,SIM_INDS))
 
 MUTATION_INTERVALS = ["20"]
-N_SEQUENCES_MI = ["25"]
+N_SEQUENCES_MI = ["50"]
 START_SEQS = ["sampled"]
-N_ROUNDS = ["50"]
+N_ROUNDS = ["50","100"]
+PSEUDOCOUNTS = ["0.0","0.3"]
 
 rule all:
     input:
@@ -44,9 +45,17 @@ rule all:
         # expand("data/msa-{msa_type}-simulation-trees/MSA-1b/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.newick",
         #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
         #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        expand("data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta",
+        # expand("data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv",
+        #         mutation_interval=MUTATION_INTERVALS, n_sequences_MI = N_SEQUENCES_MI,msa_type = MSA_TYPES, start_seqs = START_SEQS, 
+        #         proposal_type = PROPOSAL_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, sim_ind = SIM_INDS,n_rounds = N_ROUNDS),
+        # expand("data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/MI-decay-MI-values/pseudo-{pseudocount}/{fam}-{sim_ind}-MI-pseudo-{pseudocount}.tsv",
+        #         mutation_interval=MUTATION_INTERVALS, n_sequences_MI = N_SEQUENCES_MI,msa_type = MSA_TYPES, start_seqs = START_SEQS, 
+        #         proposal_type = PROPOSAL_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, sim_ind = SIM_INDS,n_rounds = N_ROUNDS,
+        #         pseudocount = PSEUDOCOUNTS),
+        expand("figures/MI-decay-analysis/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/context-size-{context_size}/{fam}/{fam}-MI-pseudo-{pseudocount}.jpg",
                 mutation_interval=MUTATION_INTERVALS, n_sequences_MI = N_SEQUENCES_MI,msa_type = MSA_TYPES, start_seqs = START_SEQS, 
-                proposal_type = PROPOSAL_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, sim_ind = SIM_INDS,n_rounds = N_ROUNDS)
+                proposal_type = PROPOSAL_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, sim_ind = SIM_INDS,n_rounds = N_ROUNDS,
+                pseudocount = PSEUDOCOUNTS),
 
 
 rule generate_tree_MSA_static:
@@ -140,7 +149,7 @@ rule simulate_for_MI_decorrelation_MSA:
     input:
         MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
     output:
-        "data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta"
+        "data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv"
     resources:
         nvidia_gpu=1
     log:
@@ -151,6 +160,30 @@ rule simulate_for_MI_decorrelation_MSA:
         --proposal_type {wildcards.proposal_type} --seed {wildcards.sim_ind} --n_mutations_interval {wildcards.mutation_interval} \
          --n_sequences {wildcards.n_sequences_MI} --n_rounds {wildcards.n_rounds} --start_seqs {wildcards.start_seqs}
         """
+
+rule calculate_MI_decorrelation_MSA:
+    input:
+        "data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv"
+    output:
+        "data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/MI-decay-MI-values/pseudo-{pseudocount}/{fam}-{sim_ind}-MI-pseudo-{pseudocount}.tsv"
+    shell:
+        """
+        python scripts/MI_decay.py  --output {output} --input_MSA {input}  \
+        --proposal_type {wildcards.proposal_type} --pseudocount {wildcards.pseudocount} --sim_ind {wildcards.sim_ind}  \
+        """
+
+rule plot_MI_decorrelation_MSA:
+    input:
+        MI_files=expand("data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}/MI-decay-MI-values/pseudo-{pseudocount}/{fam}-{sim_ind}-MI-pseudo-{pseudocount}.tsv",
+                proposal_type = PROPOSAL_TYPES,sim_ind = SIM_INDS, allow_missing = True),
+        seed_MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta"       
+    output:
+        "figures/MI-decay-analysis/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/context-size-{context_size}/{fam}/{fam}-MI-pseudo-{pseudocount}.jpg"
+    log:
+        "logs/MI-decay-analysis/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/context-size-{context_size}/{fam}/{fam}-MI-pseudo-{pseudocount}.log"
+    script:
+        "scripts/plot_MI_decay_correlation.py"
+
 
 rule simulate_along_phylogeny_MSA_static:
     input:

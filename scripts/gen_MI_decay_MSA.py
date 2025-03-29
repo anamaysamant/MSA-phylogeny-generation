@@ -20,7 +20,7 @@ os.chdir(work_dir)
 import os
 from time import time
 
-os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu())
+# os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu())
 
 
 parser = argparse.ArgumentParser()

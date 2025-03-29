@@ -13,6 +13,7 @@ from Bio.SeqRecord import SeqRecord
 import torch
 from time import time
 import os
+import sys
 
 import argparse
 
@@ -34,7 +35,10 @@ parser.add_argument("-t", "--tool", action="store", dest="tool",
                     help="tool used for simulation of MSA")
 
 parser.add_argument("-M", "--input_MSA", action="store", dest="input_MSA",
-                    help="input protein family MSA")
+                    help="input protein family seed MSA")
+
+parser.add_argument("--input_MSA_full", action="store", dest="input_MSA_full",
+                    help="input protein family full MSA")
 
 parser.add_argument("-T", "--input_tree", action="store", dest="input_tree",
                     help="input protein family tree")
@@ -93,7 +97,8 @@ parser.add_argument( "--seed", action="store", dest="seed",
 args = parser.parse_args()
 
 tool = args.tool
-MSA_path = args.input_MSA
+MSA_path_seed = args.input_MSA
+MSA_path_full = args.input_MSA_full
 tree_path = args.input_tree
 num_seqs = args.num_seqs
 context_type = args.context_type
@@ -130,10 +135,13 @@ logging.basicConfig(
 
 np.random.seed(seed)
 
-all_seqs = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(MSA_path, "fasta")]
+all_seqs_seed = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(MSA_path_seed, "fasta")]
+
+if MSA_path_full != None:
+    all_seqs_full = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(MSA_path_full, "fasta")]
 
 if num_seqs == None:
-    num_seqs = len(all_seqs)
+    num_seqs = len(all_seqs_seed)
 
 if not no_phylogeny:
     tree = Phylo.read(tree_path,"newick")
@@ -152,18 +160,16 @@ if tool == "MSA_1b":
         model_to_use, _ = esm.pretrained.esm_msa1b_t12_100M_UR50S()
 
     if not no_phylogeny:
-        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, full_tree = tree, full_tree_path = tree_path, 
+        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs_seed, full_tree = tree, full_tree_path = tree_path, 
                                                          start_seq_index=starting_seq_index, model_to_use=model_to_use, alphabet=alphabet)
     else:
-        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs, start_seq_index=starting_seq_index, model_to_use=model_to_use, alphabet=alphabet)
+        MSA_gen_obj = Creation_MSA_Generation_MSA1b_Cython(MSA = all_seqs_seed, start_seq_index=starting_seq_index, model_to_use=model_to_use, alphabet=alphabet)
 
     method = "minimal"
     masked = True
     chunked = args.chunked
 
     if not no_phylogeny:
-
-        print(context_type)
 
         if context_type == "dynamic":
             logging.info(f"Simulating along phylogeny using MSA-1b ({context_type}-{context_sampling}-{context_size}-{proposal_type})")
@@ -212,17 +218,17 @@ elif tool == "ESM2":
 
     t1 = time()
 
-    ESM_gen_obj = MSAGeneratorESM(number_of_nodes= len(all_seqs[0][1]), number_state_spin=21,
+    ESM_gen_obj = MSAGeneratorESM(number_of_nodes= len(all_seqs_seed[0][1]), number_state_spin=21,
                                 batch_size=1,model="facebook/esm2_t33_650M_UR50D")
     
     if starting_seq_index == -1:
         print("x")
         char_list = list("-ACDEFGHIKLMNPQRSTVWY")
-        rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs[0][1]), replace = True)
+        rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs_seed[0][1]), replace = True)
         first_sequence = [char_list[i] for i in rand_char_order]
         first_sequence = ''.join(first_sequence)
     else:
-        first_sequence = all_seqs[starting_seq_index][1]
+        first_sequence = all_seqs_seed[starting_seq_index][1]
     
     new_MSA = ESM_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, flip_before_start=0)
 
@@ -249,11 +255,11 @@ elif tool == "Potts":
     if starting_seq_index == -1:
         print("x")
         char_list = list("-ACDEFGHIKLMNPQRSTVWY")
-        rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs[0][1]), replace = True)
+        rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs_seed[0][1]), replace = True)
         first_sequence = [char_list[i] for i in rand_char_order]
         first_sequence = ''.join(first_sequence)
     else:
-        first_sequence = all_seqs[starting_seq_index][1]
+        first_sequence = all_seqs_seed[starting_seq_index][1]
 
     first_sequence = np.array([Potts_gen_obj.bmdca_mapping[char] for char in list(first_sequence)])
 
@@ -284,10 +290,10 @@ elif tool == "ProtMamba":
         model_to_use = None
 
     if not no_phylogeny:
-        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs, full_tree = tree, full_tree_path = tree_path, 
+        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs_full, full_tree = tree, full_tree_path = tree_path, 
                                                          start_seq_index=starting_seq_index, model_to_use=model_to_use)
     else:
-        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs, start_seq_index=starting_seq_index, model_to_use=model_to_use)
+        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs_full, start_seq_index=starting_seq_index, model_to_use=model_to_use)
 
     if not no_phylogeny:
 

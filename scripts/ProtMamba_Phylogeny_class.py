@@ -1,13 +1,14 @@
 from ProtMamba_ssm.utils import *
 from ProtMamba_ssm.dataloaders import *
 from ProtMamba_ssm.modules import *
-from ProtMamba_ssm.aux_msa_functions import *
+from aux_msa_functions import *
 
 import numpy as np
 import torch
 import os
 from typing import List, Tuple, Optional, Dict, NamedTuple, Union, Callable
 from Bio import SeqIO, Phylo
+import sys
 
 class ProtMamba_Simulator:
     
@@ -25,6 +26,7 @@ class ProtMamba_Simulator:
         self.n_cols = len(self.original_MSA[0][1])
 
         self.context = None
+        self.context_size = None
 
         if model_to_use == None:
 
@@ -57,8 +59,9 @@ class ProtMamba_Simulator:
 
             if method == "greedy":
 
-                context = greedy_select(all_sequences, num_seqs = context_size + 1)
+                context = greedy_select(all_sequences, num_seqs = context_size + 1, random_start = False)
                 context = context[1:]
+                self.context_size = len(context)
 
                 self.context = tokenizer([seq[1] for seq in context], concatenate=True)
                 self.context = self.context.to(self.device)
@@ -67,6 +70,7 @@ class ProtMamba_Simulator:
 
                 random_ind = list(np.random.choice(range(1,len(all_sequences)),context_size, replace = False))
                 context = [all_sequences[i] for i in random_ind]
+                self.context_size = len(context)
 
                 self.context = tokenizer([seq[1] for seq in all_sequences], concatenate=True)
                 self.context = self.context.to(self.device)
@@ -89,7 +93,7 @@ class ProtMamba_Simulator:
                 
         self.phylogeny_MSA = []
         
-        self.sample_static_context(self.original_MSA, method = "greedy", context_size = context_size)
+        self.sample_static_context(self.original_MSA, method = "random", context_size = context_size)
         first_sequence_tokens = self.mcmc(Number_of_Mutation = flip_before_start, previous_sequence_tokens = self.init_seq.clone(),
                                         proposal = proposal)
     
@@ -151,6 +155,7 @@ class ProtMamba_Simulator:
                         
                         self.context = greedy_select(desc_sequences, num_seqs = context_size)
               
+                    self.context_size = len(self.context)
                     self.context = tokenizer([seq[1] for seq in self.context], concatenate=True)
                     self.context = self.context.to(self.device)
                 
@@ -221,7 +226,7 @@ class ProtMamba_Simulator:
                                     target_tokens=input_seq,
                                     target_pos_ids=targ_pos,
                                     DatasetClass=Uniclust30_Dataset,
-                                    num_sequences=10,
+                                    num_sequences=self.context_size,
                                     fim_strategy="no-scramble",
                                     mask_fraction=1,
                                     max_patches=1,
@@ -244,8 +249,14 @@ class ProtMamba_Simulator:
 
                 output_seq = output["generated"][0]
 
-                translation_table = dict.fromkeys(map(ord, '<>-clsmask1'), None)
-                output_char = output_seq.translate(translation_table)[0]
+                translation_table = dict.fromkeys(map(ord, '<>-clsmask12345'), None)
+                try:
+                    output_char = output_seq.translate(translation_table)[0]
+                except:
+                    continue
+
+                if output_char not in list("-ACDEFGHIKLMNPQRSTVWY"):
+                    continue
 
                 if AA_TO_ID[output_char] == previous_sequence_tokens[0,selected_pos]:
                     continue

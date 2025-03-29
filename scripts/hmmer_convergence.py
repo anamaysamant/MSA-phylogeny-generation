@@ -6,6 +6,7 @@ import torch
 import os
 import argparse
 import matplotlib.pyplot as plt
+import esm
 
 from aux_msa_functions import *
 from sklearn.metrics import mutual_info_score
@@ -145,11 +146,11 @@ else:
     sampled_seq_inds = np.random.choice(range(len(all_seqs)), n_sequences, replace=False)
     sampled_seqs = [all_seqs[i] for i in sampled_seq_inds]
 
+
+model_to_use, alphabet = esm.pretrained.esm_msa1b_t12_100M_UR50S()
+
 if FT_fam != None:
     model_to_use = torch.load(f"./finetuned_MSA_models/MSA_finetuned_{FT_fam}.pt")
-
-else:
-    model_to_use = None
 
 method = "minimal"
 masked = True

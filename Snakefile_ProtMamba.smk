@@ -1,12 +1,12 @@
 FAMILIES = ["PF00004"]
 MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static","dynamic"]
-CONTEXT_SIZES = ["10"]
+CONTEXT_SIZES = ["1000"]
 CONTEXT_SAMPLINGS = ["greedy","random"]
 PROPOSAL_TYPES = ["logits"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
-INIT_SEQS = ["0"]
+INIT_SEQS = ["1464"]
 
 N_MUTATIONS_START = 500
 N_MUTATIONS_END = ["1000"]
@@ -18,21 +18,26 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
-        expand("scores/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
-                fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        # expand("data/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+        #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("data/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.fasta",
+                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        # expand("data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS_END, 
+        #         context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
+
+        # expand("scores/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+        #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         expand("scores/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.tsv",
                 msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
                 sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        # expand("data/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-a2m/{fam}-{sim_ind}.a2m",
-        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
-        #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        # expand("data/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-a2m/{fam}-{sim_ind}.a2m",
-        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS_END, 
         #         context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
+        
         # expand("data/msa-{msa_type}-simulation-trees/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.newick",
         #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
         #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
@@ -128,7 +133,8 @@ rule simulate_without_phylogeny_extended_MSA:
 
 rule simulate_along_phylogeny_ProtMamba_static:
     input:
-        MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        MSA_seed="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        MSA_full="data/protein-families-msa-full/{fam}.fasta",
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
     output:
         "data/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.fasta"
@@ -138,14 +144,15 @@ rule simulate_along_phylogeny_ProtMamba_static:
         "logs/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.log"
     shell:
         """
-        python scripts/simulate_along_phylogeny.py --tool ProtMamba --output {output} --input_MSA {input.MSA} --input_tree {input.tree} \
+        python scripts/simulate_along_phylogeny.py --tool ProtMamba --output {output} --input_MSA {input.MSA_seed} --input_MSA_full {input.MSA_full} --input_tree {input.tree} \
         --context_type static --context_size {wildcards.context_size} --proposal_type {wildcards.proposal_type} --seed {wildcards.sim_ind}\
         --start_seq_index {wildcards.init_seq} --log_file {log}
         """
 
 rule simulate_along_phylogeny_ProtMamba_dynamic:
     input:
-        MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        MSA_seed="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        MSA_full="data/protein-families-msa-full/{fam}.fasta",
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
     output:
         "data/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.fasta"
@@ -155,7 +162,7 @@ rule simulate_along_phylogeny_ProtMamba_dynamic:
         "logs/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.log"
     shell:
         """
-        python scripts/simulate_along_phylogeny.py --tool ProtMamba --output {output} --input_MSA {input.MSA} --input_tree {input.tree} \
+        python scripts/simulate_along_phylogeny.py --tool ProtMamba --output {output} --input_MSA {input.MSA_seed} --input_MSA_full {input.MSA_full} --input_tree {input.tree} \
         --context_type dynamic --context_size {wildcards.context_size} --context_sampling {wildcards.context_sampling} \
         --proposal_type {wildcards.proposal_type} --seed {wildcards.sim_ind} --start_seq_index {wildcards.init_seq} --log_file {log}
         """
@@ -179,7 +186,7 @@ rule generate_scores_ProtMamba_static:
         hmmsearch --max --tblout {output.hmm_table} {input.hmm} {output.ungapped_seq}  
         python scripts/scores_generator.py --input_hmmer {output.hmm_table} --output {output.score_table} --J_params {input.J_params} \
         --h_params {input.h_params} --simulated_MSA {input.simulated_MSA} --original_MSA_seed {input.original_MSA_seed} \
-        --original_MSA_full {input.original_MSA_full} --tree {input.tree}
+        --original_MSA_full {input.original_MSA_full} --tree {input.tree} --pdb_path 
         """
 
 
