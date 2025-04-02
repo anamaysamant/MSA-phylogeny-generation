@@ -20,7 +20,7 @@ os.chdir(work_dir)
 import os
 from time import time
 
-# os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu())
+os.environ["CUDA_VISIBLE_DEVICES"] = str(get_free_gpu())
 
 
 parser = argparse.ArgumentParser()
@@ -82,12 +82,12 @@ start_seqs = args.start_seqs
 
 np.random.seed(seed)
 
-logging.basicConfig(
-    filename=f"MI_decay_{context_size}_nseqs_{n_sequences}_pseudo_{pseudocount}.log",               
-    level=logging.INFO,              
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    filemode="a"
-)
+# logging.basicConfig(
+#     filename=f"MI_decay_{context_size}_nseqs_{n_sequences}_pseudo_{pseudocount}.log",               
+#     level=logging.INFO,              
+#     format='%(asctime)s - %(levelname)s - %(message)s',
+#     filemode="a"
+# )
 
 all_seqs = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(input_MSA, "fasta")]
 
@@ -126,7 +126,7 @@ for j in range(1, n_rounds + 1):
 
     t1 = time()
 
-    logging.info(f"Simulating round {j} of {proposal_type} proposal")
+    # logging.info(f"Simulating round {j} of {proposal_type} proposal")
 
     new_MSA = []
     n_mutations += n_mutations_interval
@@ -150,7 +150,7 @@ for j in range(1, n_rounds + 1):
 
     t2 = time()
 
-    logging.info(f"Finished round {j} of {proposal_type} proposal. Time taken: {(t2 -t1)/60} minutes")
+    # logging.info(f"Finished round {j} of {proposal_type} proposal. Time taken: {(t2 -t1)/60} minutes")
 
 output_df = pd.DataFrame(output_df)
 

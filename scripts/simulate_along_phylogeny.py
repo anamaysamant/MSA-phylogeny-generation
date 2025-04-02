@@ -135,7 +135,9 @@ logging.basicConfig(
 
 np.random.seed(seed)
 
-all_seqs_seed = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(MSA_path_seed, "fasta")]
+
+if tool == "ProtMamba":
+    all_seqs_seed = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(MSA_path_seed, "stockholm")]
 
 if MSA_path_full != None:
     all_seqs_full = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(MSA_path_full, "fasta")]
@@ -290,10 +292,10 @@ elif tool == "ProtMamba":
         model_to_use = None
 
     if not no_phylogeny:
-        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs_full, full_tree = tree, full_tree_path = tree_path, 
+        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs_seed, full_tree = tree, full_tree_path = tree_path, 
                                                          start_seq_index=starting_seq_index, model_to_use=model_to_use)
     else:
-        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs_full, start_seq_index=starting_seq_index, model_to_use=model_to_use)
+        ProtMamba_obj = ProtMamba_Simulator(MSA = all_seqs_seed, start_seq_index=starting_seq_index, model_to_use=model_to_use)
 
     if not no_phylogeny:
 

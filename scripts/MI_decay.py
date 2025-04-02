@@ -63,6 +63,8 @@ def custom_mi(values_1, values_2, domain_1 = list("-ACDEFGHIKLMNPQRSTVWY"), doma
 
     return mi
 
+# if __name__ == "main":
+
 parser = argparse.ArgumentParser()
 
 
@@ -120,6 +122,8 @@ for n_mutations in n_mutations_list:
     output_df.append({"sim_ind":sim_ind,"proposal_type":proposal_type, "pseudocount":pseudocount, "n_mutations":n_mutations, "mean MI value": mi_sim_values_mean})
 
 output_df = pd.DataFrame(output_df)
+
+print(output)
 
 output_df.to_csv(output, sep='\t', index=False)
 

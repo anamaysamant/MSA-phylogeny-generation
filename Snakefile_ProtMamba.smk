@@ -1,12 +1,12 @@
 FAMILIES = ["PF00004"]
 MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static","dynamic"]
-CONTEXT_SIZES = ["1000"]
+CONTEXT_SIZES = ["10"]
 CONTEXT_SAMPLINGS = ["greedy","random"]
 PROPOSAL_TYPES = ["logits"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
-INIT_SEQS = ["1464"]
+INIT_SEQS = ["0"]
 
 N_MUTATIONS_START = 500
 N_MUTATIONS_END = ["1000"]
@@ -31,9 +31,9 @@ rule all:
         # expand("scores/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
         #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        expand("scores/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        # expand("scores/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/ProtMamba/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS_END, 
         #         context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
@@ -133,7 +133,7 @@ rule simulate_without_phylogeny_extended_MSA:
 
 rule simulate_along_phylogeny_ProtMamba_static:
     input:
-        MSA_seed="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        MSA_seed="data/protein-families-msa-{msa_type}/{fam}.alignment.{msa_type}",
         MSA_full="data/protein-families-msa-full/{fam}.fasta",
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
     output:
@@ -151,7 +151,7 @@ rule simulate_along_phylogeny_ProtMamba_static:
 
 rule simulate_along_phylogeny_ProtMamba_dynamic:
     input:
-        MSA_seed="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        MSA_seed="data/protein-families-msa-{msa_type}/{fam}.alignment.{msa_type}",
         MSA_full="data/protein-families-msa-full/{fam}.fasta",
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"
     output:
