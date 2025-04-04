@@ -136,8 +136,7 @@ logging.basicConfig(
 np.random.seed(seed)
 
 
-if tool == "ProtMamba":
-    all_seqs_seed = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(MSA_path_seed, "stockholm")]
+all_seqs_seed = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(MSA_path_seed, "fasta")]
 
 if MSA_path_full != None:
     all_seqs_full = [(record.description, remove_insertions(str(record.seq))) for record in SeqIO.parse(MSA_path_full, "fasta")]

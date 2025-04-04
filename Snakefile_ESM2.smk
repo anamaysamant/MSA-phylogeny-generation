@@ -1,6 +1,6 @@
 FAMILIES = ["PF00004"]
 MSA_TYPES = ["seed"]
-INIT_SEQS = ["0"]
+INIT_SEQS = ["0","120"]
 
 num_simulations = 10
 
@@ -9,6 +9,8 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
+        expand("data/msa-{msa_type}-simulations/ESM2-33T-650M/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.fasta",
+                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
         expand("scores/msa-{msa_type}-simulations/ESM2-33T-650M/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tsv",
                 msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
         

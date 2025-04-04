@@ -1,4 +1,4 @@
-cluster: "sbatch --time=30:00 --gpus=1
+cluster: "sbatch --time=10:00 --gpus=1
           --account=upbitbol --partition=l40s
           --requeue"
-jobs: 30
+jobs: 1
