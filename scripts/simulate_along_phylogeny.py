@@ -231,7 +231,7 @@ elif tool == "ESM2":
     else:
         first_sequence = all_seqs_seed[starting_seq_index][1]
     
-    new_MSA = ESM_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, flip_before_start=0)
+    new_MSA = ESM_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, flip_before_start=0, proposal = proposal_type)
 
     seq_records = []
     for i in range(new_MSA.shape[0]):

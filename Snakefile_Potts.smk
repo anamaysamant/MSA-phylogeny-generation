@@ -1,4 +1,4 @@
-FAMILIES = ["PF00004"]
+FAMILIES = ["PF00004","PF00005"]
 MSA_TYPES = ["seed"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
@@ -11,12 +11,12 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
-        # expand("scores/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tsv",
+        # expand("scores/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
-        expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, n_mutations = N_MUTATIONS, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
-        # expand("scores/protein-families-msa-{msa_type}/{fam}_{msa_type}.tsv",
-        #         msa_type = MSA_TYPES, fam = FAMILIES)
+        # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, n_mutations = N_MUTATIONS, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
+        expand("scores/protein-families-msa-{msa_type}/{fam}_{msa_type}.tsv",
+                msa_type = MSA_TYPES, fam = FAMILIES)
         # expand("data/{msa_type}-trees/{fam}_{msa_type}_rooted.newick",
         #         msa_type = MSA_TYPES, fam= FAMILIES)
         
@@ -45,9 +45,9 @@ rule simulate_along_phylogeny_Potts:
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
         h_params="data/protein-families-DCA-params/{fam}_h.npy"
     output:
-        "data/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.fasta"
+        "data/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.fasta"
     log:
-        "logs/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.log"
+        "logs/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.log"
     shell:
         """
         python scripts/simulate_along_phylogeny.py --output {output} --input_MSA {input.MSA} --input_tree {input.tree} \
@@ -58,15 +58,15 @@ rule generate_scores_Potts:
     input:
         original_MSA_seed="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
         original_MSA_full="data/protein-families-msa-full/{fam}.fasta",
-        simulated_MSA="data/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.fasta",
+        simulated_MSA="data/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.fasta",
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick",
         hmm="data/protein-families-hmms/{fam}.hmm",
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
         h_params="data/protein-families-DCA-params/{fam}_h.npy"
     output:
-        ungapped_seq=temp("data/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}-ungapped.fasta"),
-        hmm_table=temp("scores/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tbl"),
-        score_table="scores/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tsv"
+        ungapped_seq=temp("data/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}-ungapped.fasta"),
+        hmm_table=temp("scores/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tbl"),
+        score_table="scores/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv"
     shell:
        """
         seqkit replace -s -p "-" -r "" {input.simulated_MSA} > {output.ungapped_seq}
@@ -82,9 +82,9 @@ rule simulate_without_phylogeny_Potts:
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
         h_params="data/protein-families-DCA-params/{fam}_h.npy"
     output:
-        "data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.fasta"
+        "data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.fasta"
     log:
-         "logs/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.log"       
+         "logs/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.log"       
     shell:
         """
         python scripts/simulate_along_phylogeny.py --tool Potts --output {output} --input_MSA {input.MSA} --seed {wildcards.sim_ind} --no_phylogeny \
@@ -96,15 +96,15 @@ rule generate_scores_no_phylogeny_Potts:
     input:
         original_MSA_seed="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
         original_MSA_full="data/protein-families-msa-full/{fam}.fasta",
-        simulated_MSA="data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.fasta",
+        simulated_MSA="data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.fasta",
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick",
         hmm="data/protein-families-hmms/{fam}.hmm",
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
         h_params="data/protein-families-DCA-params/{fam}_h.npy"
     output:
-        ungapped_seq=temp("data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}-ungapped.fasta"),
-        hmm_table=temp("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tbl"),
-        score_table="scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/init-seq-{init_seq}/{fam}/{fam}-{sim_ind}.tsv"
+        ungapped_seq=temp("data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}-ungapped.fasta"),
+        hmm_table=temp("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tbl"),
+        score_table="scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv"
     shell:
        """
         seqkit replace -s -p "-" -r "" {input.simulated_MSA} > {output.ungapped_seq}

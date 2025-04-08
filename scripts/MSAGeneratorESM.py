@@ -61,7 +61,7 @@ class MSAGeneratorESM(MSAGenerator):
         """
         return ''.join([self.inverse_amino_acid_map[val] for val in array])
 
-    def msa_tree_phylo(self, clade_root, flip_before_start, first_sequence, neff=1.0):
+    def msa_tree_phylo(self, clade_root, flip_before_start, first_sequence, proposal, neff=1.0):
         """
         Initialize the MSA and start the recursion to compute node sequences.
         :param clade_root: root of the tree.
@@ -75,12 +75,12 @@ class MSAGeneratorESM(MSAGenerator):
         # Initialize the MSA
         msa = np.zeros((len(clade_root.get_terminals()), self.number_of_nodes), dtype=np.int8)
         # Create the new sequences recursively
-        final_msa = np.asarray(self.msa_tree_phylo_recur(clade_root, first_sequence, msa, neff))
+        final_msa = np.asarray(self.msa_tree_phylo_recur(clade_root, first_sequence, msa, proposal, neff))
         self.cur_index = 0
 
         return final_msa
 
-    def mcmc(self, number_of_mutation, l_spin):
+    def mcmc(self, number_of_mutation, l_spin, proposal):
         """
         Apply to the given sequence the given number of mutations.
         :param number_of_mutation: given number of mutations.
@@ -93,21 +93,8 @@ class MSAGeneratorESM(MSAGenerator):
         # Until the number of mutation is not achieved
         while c_mutation < number_of_mutation:
             # Select positions to mutate in the sequence
+
             selected_nodes = np.random.choice(np.arange(self.number_of_nodes), size=self.batch_size, replace=True)
-
-            # Select new states
-            new_states = np.random.randint(low = 4, high= 24, size=self.batch_size)
-
-            # Avoid to select the same state as before
-            for i in range(self.batch_size):
-
-                if new_states[i] >= l_spin[selected_nodes[i]]:
-                    new_states[i] += 1
-
-                if new_states[i] == 24:
-                    new_states[i] = 30
-            
-            
 
             # Get the current sequence in string format
             protein_sequence = self.transform_array_to_sequence(l_spin)
@@ -118,7 +105,7 @@ class MSAGeneratorESM(MSAGenerator):
                 masked_sequence = protein_sequence[:selected_node] + "<mask>" + protein_sequence[selected_node + 1:]
                 masked_sequences.append(masked_sequence)
 
-            # Get the logits from the ESM model
+             # Get the logits from the ESM model
             self.model.eval()
             with torch.no_grad():
                 tokenized_sequences = self.tokenizer(masked_sequences, return_tensors="pt")
@@ -127,21 +114,64 @@ class MSAGeneratorESM(MSAGenerator):
                 outputs = self.model(b_input_ids, attention_mask=b_input_mask)
                 logits = outputs[0].to('cpu')
 
-            # Evaluate if to accept the proposed mutations
-            for i in range(self.batch_size):
-                # Get the probabilities of each amino acid in the masked position
-                prediction = self.softmax_output(logits[i, selected_nodes[i] + 1, :])
-                score_old = prediction[l_spin[selected_nodes[i]]]
-                score_new = prediction[new_states[i]]
+            # Select new states
 
-                # Compute the ratio between probabilities
-                p = score_new / score_old
+            if proposal == "random":
 
-                # If the difference is positive or if it is greater than a random value, apply the mutation
-                if np.random.uniform() < p or p >= 1:
-                    # Modify the selected position with the new selected state
-                    l_spin[selected_nodes[i]] = new_states[i]
-                    # Increase the number of mutation applied
+                new_states = np.random.randint(low = 4, high= 24, size=self.batch_size)
+
+                # Avoid to select the same state as before
+                for i in range(self.batch_size):
+
+                    if new_states[i] >= l_spin[selected_nodes[i]]:
+                        new_states[i] += 1
+
+                    if new_states[i] == 24:
+                        new_states[i] = 30
+
+                # Evaluate if to accept the proposed mutations
+                for i in range(self.batch_size):
+                    # Get the probabilities of each amino acid in the masked position
+                    prediction = self.softmax_output(logits[i, selected_nodes[i] + 1, :])
+                    score_old = prediction[l_spin[selected_nodes[i]]]
+                    score_new = prediction[new_states[i]]
+
+                    # Compute the ratio between probabilities
+                    p = score_new / score_old
+
+                    # If the difference is positive or if it is greater than a random value, apply the mutation
+                    if np.random.uniform() < p or p >= 1:
+                        # Modify the selected position with the new selected state
+                        l_spin[selected_nodes[i]] = new_states[i]
+                        # Increase the number of mutation applied
+                        c_mutation += 1
+                        # Maintain only the first mutation found
+                        break
+
+            elif proposal == "logits":
+
+                relevant_char_indices = list(range(4,24)) + [30]
+                relevant_indices_mapping = {k:v for k,v in zip(relevant_char_indices,list(range(21)))}
+
+
+                for i in range(self.batch_size):
+
+                    original_char_index = l_spin[selected_nodes[i]]
+                    
+                    char_prob_dist = self.softmax_output(logits[i, selected_nodes[i] + 1, :]).numpy()
+                    char_prob_dist = char_prob_dist[relevant_char_indices]
+                    char_prob_dist = char_prob_dist.astype('float64')
+                    char_prob_dist = char_prob_dist/np.sum(char_prob_dist)
+                    char_prob_dist = list(char_prob_dist)
+
+                    proposed_mutation = np.random.choice(relevant_char_indices, p=char_prob_dist)
+                    proposed_mutation_prob = char_prob_dist[relevant_indices_mapping[proposed_mutation]] 
+
+                    if proposed_mutation == original_char_index:
+                        continue 
+                    
+                    l_spin[selected_nodes[i]] = proposed_mutation
                     c_mutation += 1
-                    # Maintain only the first mutation found
+
                     break
+

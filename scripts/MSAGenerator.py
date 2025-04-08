@@ -28,7 +28,7 @@ class MSAGenerator(ABC):
     def mcmc(self, number_of_mutation, l_spin):
         pass
 
-    def msa_tree_phylo_recur(self, clade_root, previous_sequence, msa, neff):
+    def msa_tree_phylo_recur(self, clade_root, previous_sequence, msa, proposal, neff):
         """
         Recurrent function to create the MSA for a given tree.
         :param clade_root: root of the current clade.
@@ -49,9 +49,9 @@ class MSAGenerator(ABC):
                 # Compute number of mutations
                 n_mutations = int(clade.branch_length * new_sequence.shape[0] * neff)
                 # Create new sequence with the given number of mutations
-                self.mcmc(n_mutations, new_sequence)
+                self.mcmc(n_mutations, new_sequence, proposal)
                 # Recursive step
-                self.msa_tree_phylo_recur(clade, new_sequence, msa, neff)
+                self.msa_tree_phylo_recur(clade, new_sequence, msa, proposal, neff)
         else:  # If b is a leaf
             # Save the leaf sequence in the MSA
             msa[self.cur_index, :] = previous_sequence
