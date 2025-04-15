@@ -20,7 +20,7 @@ def calc_plddt_score(sequence,pdb_path):
         pdb_file = model.infer_pdb(sequence)
 
     with open(pdb_path, "w") as f:
-        f.write(output)
+        f.write(pdb_file)
 
     struct = bsio.load_structure(pdb_path, extra_fields=["b_factor"])
     subprocess.run(['rm',pdb_path])

@@ -1,8 +1,8 @@
-FAMILIES = ["PF00004","PF00005"]
+FAMILIES = ["PF00271"]
 MSA_TYPES = ["seed"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
-INIT_SEQS = ["0","120"]
+INIT_SEQS = ["0"]
 
 num_simulations = 10
 
@@ -11,6 +11,8 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
+        # expand("data/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
         # expand("scores/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
         # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",

@@ -1,4 +1,4 @@
-FAMILIES = ["PF00004"]
+FAMILIES = ["PF00271"]
 MSA_TYPES = ["seed"]
 INIT_SEQS = ["0"]
 PROPOSAL_TYPES = ["logits","random"]
@@ -12,8 +12,8 @@ rule all:
     input:
         expand("data/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.fasta",
                 msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
-        # expand("scores/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.tsv",
-        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        expand("scores/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.tsv",
+                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
         
 # rule generate_tree:
 #     input:

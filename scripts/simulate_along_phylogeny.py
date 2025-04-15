@@ -267,7 +267,7 @@ elif tool == "Potts":
     if no_phylogeny:
         new_MSA = Potts_gen_obj.msa_no_phylo(n_sequences=n_sequences, n_mutations=n_mutations, first_sequence=first_sequence)
     else:
-        new_MSA = Potts_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, flip_before_start=0)
+        new_MSA = Potts_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, proposal = None, flip_before_start=0)
     
     seq_records = []
     for i in range(new_MSA.shape[0]):

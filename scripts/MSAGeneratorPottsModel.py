@@ -36,7 +36,7 @@ class MSAGeneratorPottsModel(MSAGenerator):
         return np.asarray(msa)
         
 
-    def msa_tree_phylo(self, clade_root, first_sequence, flip_before_start=0, neff=1.0):
+    def msa_tree_phylo(self, clade_root, first_sequence, flip_before_start=0, proposal = None, neff=1.0):
         """
         Initialize the MSA and start the recursion to compute node sequences.
         :param clade_root: root of the tree.
@@ -53,12 +53,12 @@ class MSAGeneratorPottsModel(MSAGenerator):
         # Compute the first sequence (root)
         self.mcmc(flip_before_start, first_sequence)
         # Create the new sequences in the MSA recursively
-        final_msa = np.asarray(self.msa_tree_phylo_recur(clade_root, first_sequence, msa, neff))
+        final_msa = np.asarray(self.msa_tree_phylo_recur(clade_root, first_sequence, msa, proposal=None, neff=neff))
         self.cur_index = 0
 
         return final_msa
   
-    def mcmc(self, number_of_mutation, l_spin):
+    def mcmc(self, number_of_mutation, l_spin, proposal = None):
         """
         Apply to the given sequence the given number of mutations.
         :param number_of_mutation: given number of mutations.
