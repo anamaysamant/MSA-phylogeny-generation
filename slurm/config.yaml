@@ -1,4 +1,4 @@
-cluster: "sbatch --time=15:00 --gpus=1 --mem=20G
-          --account=upbitbol --partition=h100
+cluster: "sbatch --time=10:00 --gpus=1 --mem=20G
+          --account=upbitbol --partition=l40s
           --requeue --output=/dev/null"
 jobs: 30

@@ -1,9 +1,9 @@
-FAMILIES = ["PF00271"]
+FAMILIES = ["PF00004","PF00005","PF00271"]
 MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static","dynamic"]
-CONTEXT_SIZES = ["100"]
+CONTEXT_SIZES = ["10"]
 CONTEXT_SAMPLINGS = ["greedy","random"]
-PROPOSAL_TYPES = ["logits"]
+PROPOSAL_TYPES = ["logits","random"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
 INIT_SEQS = ["0"]
@@ -24,27 +24,33 @@ PSEUDOCOUNTS = ["0.0","0.3","0.4"]
 
 rule all:
     input:
-        expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
-                fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.fasta",
-                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
-                fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.fasta",
-                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        # expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+        #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        # expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        # expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+        #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        # expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, context_sizqe = CONTEXT_SIZES, fam = FAMILIES, 
+        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS_END, 
         #         context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
-        # expand("data/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.newick",
-        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
-        #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        # expand("data/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.newick",
-        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("data/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.newick",
+                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+                fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("data/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.newick",
+                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("scores/msa-{msa_type}-sim-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-tree.tsv",
+                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+                fam = FAMILIES, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("scores/msa-{msa_type}-sim-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-tree.tsv",
+                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+                proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         # expand("data/MI_decay_MSAs/{mutation_interval}-mutation-interval/{n_sequences_MI}-sequences/{n_rounds}-rounds/msa-{msa_type}-simulations/MSA-1b/init-seq-{start_seqs}/{proposal_type}-proposal/context-size-{context_size}/{fam}-{sim_ind}.tsv",
         #         mutation_interval=MUTATION_INTERVALS, n_sequences_MI = N_SEQUENCES_MI,msa_type = MSA_TYPES, start_seqs = START_SEQS, 
         #         proposal_type = PROPOSAL_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, sim_ind = SIM_INDS,n_rounds = N_ROUNDS),
@@ -66,7 +72,7 @@ rule generate_tree_MSA_static:
     log:
         "logs/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.log"
     shell:
-        "FastTree {input} > {output}"
+        "fasttree {input} > {output}"
 
 rule generate_tree_MSA_dynamic:
     input:
@@ -76,7 +82,33 @@ rule generate_tree_MSA_dynamic:
     log:
         "logs/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.log"
     shell:
-        "FastTree {input} > {output}"
+        "fasttree {input} > {output}"
+
+rule generate_tree_metrics_static:
+    input:
+        simulated_trees=expand("data/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.newick",
+                sim_ind = SIM_INDS, allow_missing = True), 
+        simulated_MSAs=expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.fasta",
+                sim_ind = SIM_INDS, allow_missing = True),
+        seed_MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        seed_tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"     
+    output:
+        "scores/msa-{msa_type}-sim-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-tree.tsv"
+    script:
+        "scripts/tree_metrics_generator.py"
+
+rule generate_tree_metrics_dynamic:
+    input:
+        simulated_trees=expand("data/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.newick",
+                sim_ind = SIM_INDS, allow_missing = True), 
+        simulated_MSAs=expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.fasta",
+                sim_ind = SIM_INDS, allow_missing = True),
+        seed_MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta", 
+        seed_tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"     
+    output:
+        "scores/msa-{msa_type}-sim-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-tree.tsv"
+    script:
+        "scripts/tree_metrics_generator.py"
 
 rule root_tree:
     input:

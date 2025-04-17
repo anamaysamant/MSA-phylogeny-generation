@@ -1,4 +1,4 @@
-FAMILIES = ["PF00271"]
+FAMILIES = ["PF00271","PF00005","PF00004"]
 MSA_TYPES = ["seed"]
 INIT_SEQS = ["0"]
 PROPOSAL_TYPES = ["logits","random"]
@@ -10,10 +10,14 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
-        expand("data/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.fasta",
+        # expand("data/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        # expand("scores/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        expand("data/msa-{msa_type}-simulation-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.newick",
                 msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
-        expand("scores/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        expand("scores/msa-{msa_type}-sim-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-tree.tsv",
+                msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
         
 # rule generate_tree:
 #     input:
@@ -32,6 +36,30 @@ rule root_tree:
         "data/{msa_type}-trees/{fam}_{msa_type}_rooted.newick"
     shell:
         "python scripts/root_tree.py --input {input} --output {output}"
+
+
+rule generate_tree_ESM2:
+    input:
+        "data/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/{fam}-{sim_ind}.fasta"
+    output:
+        "data/msa-{msa_type}-simulation-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/{fam}-{sim_ind}.newick"
+    log:
+        "logs/msa-{msa_type}-simulation-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/{fam}-{sim_ind}.log"
+    shell:
+        "fasttree {input} > {output}"
+
+rule generate_tree_metrics_ESM2:
+    input:
+        simulated_trees=expand("data/msa-{msa_type}-simulation-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/{fam}-{sim_ind}.newick",
+                sim_ind = SIM_INDS, allow_missing = True), 
+        simulated_MSAs=expand("data/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/{fam}-{sim_ind}.fasta",
+                sim_ind = SIM_INDS, allow_missing = True),
+        seed_MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        seed_tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"     
+    output:
+        "scores/msa-{msa_type}-sim-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/{fam}-tree.tsv"
+    script:
+        "scripts/tree_metrics_generator.py"
 
 rule simulate_along_phylogeny_ESM2:
     input:
