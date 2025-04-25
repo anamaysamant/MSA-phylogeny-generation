@@ -133,18 +133,21 @@ if scores_table.shape[0] != 0:
     J_params = np.load(J_params)
     h_params = np.load(h_params)
 
-    stat_energy_scores = []
-    for sequence in scores_table["sequence"]:
-        hamiltonian = 0
-        num_sequence = [bmdca_mapping[char] for char in list(sequence)]
-        for node_i in range(n_cols):
-            hamiltonian -= h_params[node_i,num_sequence[node_i]]
-            for index_neighboor in range(node_i+1,n_cols):
-                hamiltonian -= J_params[node_i,index_neighboor,num_sequence[node_i],num_sequence[index_neighboor]]
+    try:
+        stat_energy_scores = []
+        for sequence in scores_table["sequence"]:
+            hamiltonian = 0
+            num_sequence = [bmdca_mapping[char] for char in list(sequence)]
+            for node_i in range(n_cols):
+                hamiltonian -= h_params[node_i,num_sequence[node_i]]
+                for index_neighboor in range(node_i+1,n_cols):
+                    hamiltonian -= J_params[node_i,index_neighboor,num_sequence[node_i],num_sequence[index_neighboor]]
 
-        stat_energy_scores.append(-hamiltonian)
+            stat_energy_scores.append(-hamiltonian)
 
-    scores_table["stat_energy_scores"] = stat_energy_scores
+        scores_table["stat_energy_scores"] = stat_energy_scores
+    except:
+        pass
 
     sim_sequences_array = np.array([list(seq) for seq in scores_table["sequence"]], dtype=np.bytes_).view(np.uint8)
     nat_seed_sequences_array = np.array([list(seq) for _,seq in nat_seed_sequences], dtype=np.bytes_).view(np.uint8)

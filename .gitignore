@@ -176,3 +176,6 @@ cython_debug/
 finetuned_MSA_models/
 */msa-seed-simulations-old/
 ProtMamba-Long-foundation/
+
+data/protein-families-DCA-params/PF13354_J.npy
+data/protein-families-DCA-params/PF13354_h.npy
