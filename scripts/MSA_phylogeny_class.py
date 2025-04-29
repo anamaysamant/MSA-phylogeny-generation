@@ -148,7 +148,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
         return log_total_prob
 
     def msa_tree_phylo(self, clade_root, method, masked, context_type, 
-                        context_size, context_sampling, proposal, flip_before_start = 0):
+                        context_size, context_sampling, proposal, flip_before_start = 0, r_eff = 1.0):
                 
         self.phylogeny_MSA = []
 
@@ -157,11 +157,11 @@ class Creation_MSA_Generation_MSA1b_Cython:
                                         method = method, masked = masked, proposal = proposal)
     
         if context_type == "static":
-            self.msa_tree_phylo_recur(clade_root, first_sequence_tokens.clone(), method=method, masked=masked, proposal = proposal)
+            self.msa_tree_phylo_recur(clade_root, first_sequence_tokens.clone(), method=method, masked=masked, proposal = proposal, r_eff = r_eff)
 
         elif context_type == "dynamic":
             self.msa_tree_phylo_recur_dynamic(clade_root, first_sequence_tokens.clone(), method=method, masked=masked, 
-                                                context_sampling=context_sampling, context_size = context_size, proposal = proposal)
+                                                context_sampling=context_sampling, context_size = context_size, proposal = proposal, r_eff = r_eff)
 
         results = self.phylogeny_MSA.copy()
         self.phylogeny_MSA = []
@@ -170,7 +170,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
         
         return results
     
-    def msa_tree_phylo_recur(self, clade_root, previous_sequence_tokens, method, masked, proposal):
+    def msa_tree_phylo_recur(self, clade_root, previous_sequence_tokens, method, masked, proposal, r_eff):
         
         b = clade_root.clades
 
@@ -178,9 +178,9 @@ class Creation_MSA_Generation_MSA1b_Cython:
             for clade in b:
                 # Mutation on previous_sequences
                 # print("entering new branch")
-                n_mutations = int(clade.branch_length*self.n_cols)
+                n_mutations = int(clade.branch_length*self.n_cols*r_eff)
                 new_sequence_tokens = self.mcmc(n_mutations, previous_sequence_tokens.clone(), method, masked, proposal)
-                self.msa_tree_phylo_recur(clade, new_sequence_tokens.clone(), method, masked, proposal=proposal)
+                self.msa_tree_phylo_recur(clade, new_sequence_tokens.clone(), method, masked, proposal=proposal, r_eff = r_eff)
         else:
 
             final_seq = ""
@@ -193,14 +193,14 @@ class Creation_MSA_Generation_MSA1b_Cython:
             seq_index = len(self.phylogeny_MSA)
             self.phylogeny_MSA.append((f"seq{seq_index}",final_seq))
             
-    def msa_tree_phylo_recur_dynamic(self, clade_root, previous_sequence_tokens, method, masked, context_size, context_sampling, proposal):
+    def msa_tree_phylo_recur_dynamic(self, clade_root, previous_sequence_tokens, method, masked, context_size, context_sampling, proposal, r_eff):
         
         b = clade_root.clades
         
         if len(b)>1:
             for clade in b:
                 # print("entering new branch")
-                n_mutations = int(clade.branch_length*self.n_cols)
+                n_mutations = int(clade.branch_length*self.n_cols*r_eff)
                 desc_leaves = [node.name for node in clade.get_terminals() if node.name != self.start_seq_name]
                 desc_sequences = [elem for elem in self.original_MSA if elem[0] in desc_leaves]
                 if len(desc_leaves) > context_size:
@@ -221,7 +221,7 @@ class Creation_MSA_Generation_MSA1b_Cython:
                 new_sequence_tokens = self.mcmc(n_mutations, previous_sequence_tokens.clone(), method, masked, proposal)
                 self.msa_tree_phylo_recur_dynamic(clade, new_sequence_tokens.clone(), method = method, masked =masked,
                                                     context_size = context_size, context_sampling = context_sampling,
-                                                    proposal = proposal)
+                                                    proposal = proposal, r_eff = r_eff)
         else:
 
             final_seq = ""

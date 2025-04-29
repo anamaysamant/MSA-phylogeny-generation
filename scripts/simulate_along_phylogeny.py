@@ -94,6 +94,10 @@ parser.add_argument( "--log_file", action="store", dest="log_file",
 parser.add_argument( "--seed", action="store", dest="seed", 
                     help="random seed to use", type=int, default=0)
 
+parser.add_argument( "--r_eff", action="store", dest="r_eff", 
+                    help="random seed to use", type=float,default=1.0)
+
+
 args = parser.parse_args()
 
 tool = args.tool
@@ -116,6 +120,9 @@ n_sequences = args.n_sequences
 seed = args.seed
 FT_fam = args.FT_fam
 log_file = args.log_file
+r_eff = args.r_eff
+
+print(r_eff)
 
 work_dir = os.getcwd()
 os.chdir("./scripts")
@@ -179,7 +186,7 @@ if tool == "MSA_1b":
 
         if not chunked:
             new_MSA = MSA_gen_obj.msa_tree_phylo(tree.clade,flip_before_start=0, method=method, 
-            masked=masked, context_type = context_type, context_sampling = context_sampling, context_size = context_size, proposal = proposal_type)
+            masked=masked, context_type = context_type, context_sampling = context_sampling, context_size = context_size, proposal = proposal_type, r_eff = r_eff)
         else:
             new_MSA = MSA_gen_obj.msa_tree_phylo_chunked(total_sequences = 100,sequences_per_iteration = 10, method=method, masked=masked, proposal = proposal_type)
 
