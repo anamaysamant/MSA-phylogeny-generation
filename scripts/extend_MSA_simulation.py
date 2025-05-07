@@ -14,8 +14,6 @@ from time import time
 import os
 
 import argparse
-import pyximport
-pyximport.install()
 
 from aux_msa_functions import *
 from MSAGeneratorESM import MSAGeneratorESM

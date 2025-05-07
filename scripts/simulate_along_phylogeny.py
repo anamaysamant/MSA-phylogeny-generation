@@ -20,6 +20,7 @@ import argparse
 from aux_msa_functions import *
 from MSAGeneratorESM import MSAGeneratorESM
 from MSAGeneratorPottsModel import MSAGeneratorPottsModel
+from MSAGeneratorESMC import MSAGeneratorESMC
 from select_gpu import get_free_gpu
 
 import logging
@@ -121,8 +122,6 @@ seed = args.seed
 FT_fam = args.FT_fam
 log_file = args.log_file
 r_eff = args.r_eff
-
-print(r_eff)
 
 work_dir = os.getcwd()
 os.chdir("./scripts")
@@ -230,7 +229,6 @@ elif tool == "ESM2":
                                 batch_size=1,model="facebook/esm2_t33_650M_UR50D")
     
     if starting_seq_index == -1:
-        print("x")
         char_list = list("-ACDEFGHIKLMNPQRSTVWY")
         rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs_seed[0][1]), replace = True)
         first_sequence = [char_list[i] for i in rand_char_order]
@@ -250,6 +248,33 @@ elif tool == "ESM2":
     t2 = time()
 
     logging.info(f"Time taken to simulate along phylogeny using ESM2: {(t2-t1)/60} minutes")
+
+elif tool == "ESMC":
+
+    t1 = time()
+
+    ESMC_gen_obj = MSAGeneratorESMC(number_of_nodes= len(all_seqs_seed[0][1]), number_state_spin=21,model="esmc_300m")
+    
+    if starting_seq_index == -1:
+        char_list = list("-ACDEFGHIKLMNPQRSTVWY")
+        rand_char_order = np.random.choice(range(len(char_list)), len(all_seqs_seed[0][1]), replace = True)
+        first_sequence = [char_list[i] for i in rand_char_order]
+        first_sequence = ''.join(first_sequence)
+    else:
+        first_sequence = all_seqs_seed[starting_seq_index][1]
+    
+    new_MSA = ESMC_gen_obj.msa_tree_phylo(clade_root=tree.clade, first_sequence=first_sequence, flip_before_start=0, proposal = proposal_type)
+
+    seq_records = []
+    for i in range(new_MSA.shape[0]):
+        seq_records.append(SeqRecord(seq=Seq(''.join(ESMC_gen_obj.inverse_amino_acid_map[index]
+                                                    for index in new_MSA[i])),
+                                    id='seq' + str(i), description='seq' + str(i), name='seq' + str(i)))
+    SeqIO.write(seq_records,output, "fasta")
+
+    t2 = time()
+
+    logging.info(f"Time taken to simulate along phylogeny using ESMC: {(t2-t1)/60} minutes")
 
 elif tool == "Potts":
 

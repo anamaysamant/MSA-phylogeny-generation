@@ -1,4 +1,4 @@
 cluster: "sbatch --time=30:00 --gpus=1 --mem=20G
-          --account=upbitbol --partition=l40s
+          --account=upbitbol --partition=h100
           --requeue --output=/dev/null"
-jobs: 60
+jobs: 50

@@ -3,7 +3,7 @@ import pandas as pd
 from aux_msa_functions import *
 import time
 from scipy.spatial.distance import cdist
-from Bio import Phylo
+from Bio import Phylo, Align
 import torch
 import esm
 import biotite.structure.io as bsio
@@ -13,6 +13,33 @@ try:
     from Levenshtein import distance
 except:
     pass
+
+def fit_rms(ref_c,c):
+    # move geometric center to the origin
+    ref_trans = np.average(ref_c, axis=0)
+    ref_c = ref_c - ref_trans
+    c_trans = np.average(c, axis=0)
+    c = c - c_trans
+
+    # covariance matrix
+    C = np.dot(c.T, ref_c)
+
+    # Singular Value Decomposition
+    (r1, s, r2) = np.linalg.svd(C)
+
+    # compute sign (remove mirroring)
+    if np.linalg.det(C) < 0:
+        r2[2,:] *= -1.0
+    U = np.dot(r1, r2)
+    return (c_trans, U, ref_trans)
+
+
+def set_rmsd(c1, c2):
+    rmsd = 0.0
+    c_trans, U, ref_trans = fit_rms(c1, c2)
+    new_c2 = np.dot(c2 - c_trans, U) + ref_trans
+    rmsd = np.sqrt( np.average( np.sum( ( c1 - new_c2 )**2, axis=1 ) ) )
+    return rmsd
 
 def calc_plddt_score(sequence,pdb_path):
 
@@ -26,6 +53,56 @@ def calc_plddt_score(sequence,pdb_path):
     subprocess.run(['rm',pdb_path])
     return struct.b_factor.mean()  # this will be the pLDDT
 
+def calc_plddt_and_rmsd_score(cur_seq,ref_pdb_path,cur_pdb_path, model):
+
+    ref_struct = bsio.load_structure(ref_pdb_path, extra_fields=["b_factor"])
+
+    ref_atoms = []
+    for atom in ref_struct:
+        if atom.atom_name == "CA":
+            ref_atoms.append(atom.coord)
+    ref_atoms =  np.array(ref_atoms)
+
+    aligner = Align.PairwiseAligner()
+
+    ref_seq = set([(int(ind),AA_mapping[str(res)]) for ind,res in zip(ref_struct.res_id, ref_struct.res_name) if str(res) in list(AA_mapping.keys())])
+    ref_seq = [seq[1] for seq in ref_seq]
+    ref_seq = ''.join(ref_seq)
+
+    alignments = aligner.align(ref_seq, cur_seq)
+    alignment = alignments[0].aligned
+
+    aligned_seq1 = ''
+    aligned_seq2 = ''
+
+    for i in range(alignment.shape[1]):
+
+        current_range_1 = alignment[0,i,:]
+        aligned_seq1 += ref_seq[current_range_1[0]:current_range_1[1]]
+
+        current_range_2 = alignment[1,i,:]
+        aligned_seq2 += cur_seq[current_range_2[0]:current_range_2[1]]
+
+
+    with torch.no_grad():
+            pdb_file = model.infer_pdb(aligned_seq2)
+
+    with open(cur_pdb_path, "w") as f:
+        f.write(pdb_file)
+
+    struct_cur = bsio.load_structure(cur_pdb_path, extra_fields=["b_factor"])
+    subprocess.run(['rm',cur_pdb_path])
+
+    cur_atoms = []
+    for atom in struct_cur:
+        if atom.atom_name == "CA":
+            cur_atoms.append(atom.coord)
+    cur_atoms =  np.array(cur_atoms)
+
+    rmsd = set_rmsd(ref_atoms, cur_atoms)
+    plddt_score = struct_cur.b_factor.mean()
+
+    return {"plddt":plddt_score, "rmsd":rmsd}
 
 def leaf_matcher(clade_root, all_syn_seqs, all_nat_seqs_dict):
 
@@ -79,6 +156,11 @@ parser.add_argument("--no_phylogeny", action="store_true", dest="no_phylogeny",
                     help="do not evolve along a tree")
 
 args = parser.parse_args()
+
+AA_3_letters = ["ALA","ARG","ASN","ASP","CYS","GLN","GLU","GLY","HIS","ILE","LEU","LYS","MET","PHE","PRO","SER","THR","TRP","TYR","VAL"]
+AA_1_letter = list("ARNDCQEGHILKMFPSTWYV")
+
+AA_mapping = {k:v for k,v in zip(AA_3_letters,AA_1_letter)}
 
 input_hmmer = args.input_hmmer
 output = args.output
@@ -192,14 +274,18 @@ if scores_table.shape[0] != 0:
     model = model.eval().cuda()
 
     plddt_scores = []
+    # rmsds = []
 
     for i,sequence in enumerate(scores_table["sequence"]):
 
         sequence = sequence.replace("-","")
         plddt_score = calc_plddt_score(sequence, pdb_path=f"{output}-seq{i}.pdb")
         plddt_scores.append(plddt_score)
+        # rmsds.append(struct_scores["rmsd"])
+
 
     scores_table["plddt_scores"] = plddt_scores
+    # scores_table["rmsd"] = rmsds
 
 scores_table.to_csv(output, sep="\t", index = False)
 
