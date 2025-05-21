@@ -20,8 +20,14 @@ import argparse
 from aux_msa_functions import *
 from MSAGeneratorESM import MSAGeneratorESM
 from MSAGeneratorPottsModel import MSAGeneratorPottsModel
-from MSAGeneratorESMC import MSAGeneratorESMC
+
+try:
+    from MSAGeneratorESMC import MSAGeneratorESMC
+except:
+    pass
+
 from select_gpu import get_free_gpu
+
 
 import logging
 import os
