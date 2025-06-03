@@ -1,6 +1,8 @@
-FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF13354","PF00595","PF00397","PF00153","PF07679","PF00076","PF00072","PF00096","PF00512","PF00041"]
+FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF13354","PF00595","PF00397","PF00153","PF07679",
+            "PF00076","PF00072","PF00096","PF00512","PF00041","PF02518",
+            "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
 MSA_TYPES = ["seed"]
-INIT_SEQS = ["10"]
+INIT_SEQS = ["0"]
 PROPOSAL_TYPES = ["logits"]
 
 num_simulations = 10
@@ -10,14 +12,14 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
-        expand("data/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.fasta",
-                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
-        expand("scores/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
-        expand("data/msa-{msa_type}-simulation-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.newick",
-                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
-        expand("scores/msa-{msa_type}-sim-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-tree.tsv",
-                msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        # expand("data/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        # expand("scores/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        # expand("data/msa-{msa_type}-simulation-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.newick",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        # expand("scores/msa-{msa_type}-sim-trees/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-tree.tsv",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
         
 # rule generate_tree:
 #     input:
@@ -81,8 +83,8 @@ rule generate_scores_ESM2:
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick",
         hmm="data/protein-families-hmms/{fam}.hmm",
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
-        h_params="data/protein-families-DCA-params/{fam}_h.npy"
-
+        h_params="data/protein-families-DCA-params/{fam}_h.npy",
+        pdb_path="data/pdb-ref-structures/{fam}-ref.pdb"
     output:
         ungapped_seq=temp("data/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}-ungapped.fasta"),
         hmm_table=temp("scores/msa-{msa_type}-simulations/ESM2-33T-650M/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.tbl"),
@@ -93,5 +95,5 @@ rule generate_scores_ESM2:
         hmmsearch --max --tblout {output.hmm_table} {input.hmm} {output.ungapped_seq}  
         python scripts/scores_generator.py --input_hmmer {output.hmm_table} --output {output.score_table} --J_params {input.J_params} \
         --h_params {input.h_params} --simulated_MSA {input.simulated_MSA} --original_MSA_seed {input.original_MSA_seed} \
-        --original_MSA_full {input.original_MSA_full} --tree {input.tree}
+        --original_MSA_full {input.original_MSA_full} --tree {input.tree} --pdb_path {input.pdb_path}
         """

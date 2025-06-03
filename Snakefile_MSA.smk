@@ -1,4 +1,4 @@
-FAMILIES = ["PF00041","PF00096","PF00153"]
+FAMILIES = ["PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
 MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static"]
 CONTEXT_SIZES = ["10"]
@@ -26,12 +26,12 @@ R_EFFS = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 
 rule all:
     input:
-        # expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.tsv",
-        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
-        #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        # expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.tsv",
-        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.tsv",
+                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+                fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.tsv",
+                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         # expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.fasta",
         #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
         #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
@@ -64,12 +64,12 @@ rule all:
         #         mutation_interval=MUTATION_INTERVALS, n_sequences_MI = N_SEQUENCES_MI,msa_type = MSA_TYPES, start_seqs = START_SEQS, 
         #         proposal_type = PROPOSAL_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, sim_ind = SIM_INDS,n_rounds = N_ROUNDS,
         #         pseudocount = PSEUDOCOUNTS),
-        expand("other-analyses/r-effective-analysis/scores/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
-        expand("other-analyses/r-effective-analysis/data/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.fasta",
-                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
+        # expand("other-analyses/r-effective-analysis/scores/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
+        # expand("other-analyses/r-effective-analysis/data/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
 
 
 rule generate_tree_MSA_static:
@@ -267,7 +267,8 @@ rule generate_scores_MSA_static:
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick",
         hmm="data/protein-families-hmms/{fam}.hmm",
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
-        h_params="data/protein-families-DCA-params/{fam}_h.npy"
+        h_params="data/protein-families-DCA-params/{fam}_h.npy",
+        pdb_path = "data/pdb-ref-structures/{fam}-ref.pdb"
     output:
         ungapped_seq=temp("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}-ungapped.fasta"),
         hmm_table=temp("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.tbl"),
@@ -278,7 +279,7 @@ rule generate_scores_MSA_static:
         hmmsearch --max --tblout {output.hmm_table} {input.hmm} {output.ungapped_seq}  
         python scripts/scores_generator.py --input_hmmer {output.hmm_table} --output {output.score_table} --J_params {input.J_params} \
         --h_params {input.h_params} --simulated_MSA {input.simulated_MSA} --original_MSA_seed {input.original_MSA_seed} \
-        --original_MSA_full {input.original_MSA_full} --tree {input.tree}
+        --original_MSA_full {input.original_MSA_full} --tree {input.tree} --pdb_path {input.pdb_path}
         """
 
 
@@ -290,7 +291,8 @@ rule generate_scores_MSA_dynamic:
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick",
         hmm="data/protein-families-hmms/{fam}.hmm",
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
-        h_params="data/protein-families-DCA-params/{fam}_h.npy"
+        h_params="data/protein-families-DCA-params/{fam}_h.npy",
+        pdb_path = "data/pdb-ref-structures/{fam}-ref.pdb"
     output:
         ungapped_seq=temp("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}-ungapped.fasta"),
         hmm_table=temp("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.tbl"),
@@ -301,7 +303,7 @@ rule generate_scores_MSA_dynamic:
         hmmsearch --max --tblout {output.hmm_table} {input.hmm} {output.ungapped_seq}  
         python scripts/scores_generator.py --input_hmmer {output.hmm_table} --output {output.score_table} --J_params {input.J_params} \
         --h_params {input.h_params} --simulated_MSA {input.simulated_MSA} --original_MSA_seed {input.original_MSA_seed} \
-        --original_MSA_full {input.original_MSA_full} --tree {input.tree}
+        --original_MSA_full {input.original_MSA_full} --tree {input.tree} --pdb_path {input.pdb_path}
         """
 
 rule generate_scores_no_phylogeny_MSA:
@@ -312,7 +314,8 @@ rule generate_scores_no_phylogeny_MSA:
         tree="data/{msa_type}-trees/{fam}_{msa_type}.newick",
         hmm="data/protein-families-hmms/{fam}.hmm",
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
-        h_params="data/protein-families-DCA-params/{fam}_h.npy"
+        h_params="data/protein-families-DCA-params/{fam}_h.npy",
+        pdb_path = "data/pdb-ref-structures/{fam}-ref.pdb"
 
     output:
         ungapped_seq=temp("data/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}-{sim_ind}-ungapped.fasta"),
@@ -324,7 +327,7 @@ rule generate_scores_no_phylogeny_MSA:
         hmmsearch --max --tblout {output.hmm_table} {input.hmm} {output.ungapped_seq}  
         python scripts/scores_generator.py --input_hmmer {output.hmm_table} --output {output.score_table} --J_params {input.J_params} \
         --h_params {input.h_params} --simulated_MSA {input.simulated_MSA} --original_MSA_seed {input.original_MSA_seed} \
-        --original_MSA_full {input.original_MSA_full} --tree {input.tree} --no_phylogeny
+        --original_MSA_full {input.original_MSA_full} --tree {input.tree} --no_phylogeny --pdb_path {input.pdb_path}
         """
 
 
@@ -351,7 +354,8 @@ rule generate_scores_MSA_static_r_eff:
         tree="data/seed-trees/{fam}_seed.newick",
         hmm="data/protein-families-hmms/{fam}.hmm",
         J_params="data/protein-families-DCA-params/{fam}_J.npy",
-        h_params="data/protein-families-DCA-params/{fam}_h.npy"
+        h_params="data/protein-families-DCA-params/{fam}_h.npy",
+        pdb_path = "data/pdb-ref-structures/{fam}-ref.pdb"
     output:
         ungapped_seq=temp("other-analyses/r-effective-analysis/data/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{/{fam}-{sim_ind}-ungapped.fasta"),
         hmm_table=temp("other-analyses/r-effective-analysis/scores/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.tbl"),
@@ -362,5 +366,5 @@ rule generate_scores_MSA_static_r_eff:
         hmmsearch --max --tblout {output.hmm_table} {input.hmm} {output.ungapped_seq}  
         python scripts/scores_generator.py --input_hmmer {output.hmm_table} --output {output.score_table} --J_params {input.J_params} \
         --h_params {input.h_params} --simulated_MSA {input.simulated_MSA} --original_MSA_seed {input.original_MSA_seed} \
-        --original_MSA_full {input.original_MSA_full} --tree {input.tree}
+        --original_MSA_full {input.original_MSA_full} --tree {input.tree} --pdb_path {input.pdb_path}
         """
