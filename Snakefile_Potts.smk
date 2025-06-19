@@ -1,4 +1,7 @@
-FAMILIES = ["PF00271"]
+FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF00595","PF00397","PF07679",
+            "PF00072","PF00096","PF00041",
+            "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
+# FAMILIES = ["PF00005"]
 MSA_TYPES = ["seed"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
@@ -11,20 +14,24 @@ SIM_INDS = list(map(str,SIM_INDS))
 
 rule all:
     input:
-        expand("scores/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
+        # expand("scores/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
         # expand("data/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.fasta",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
         # expand("data/msa-{msa_type}-simulation-trees/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.newick",
         #        msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
-        # expand("scores/msa-{msa_type}-sim-trees/Potts/{fam}/init-seq-{init_seq}/{fam}-tree.tsv",
-        #        msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS),       
+        expand("scores/msa-{msa_type}-sim-trees/Potts/{fam}/init-seq-{init_seq}/{fam}-tree.tsv",
+               msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS),       
         # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, n_mutations = N_MUTATIONS, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
         # expand("scores/protein-families-msa-{msa_type}/{fam}_{msa_type}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES)
         # expand("data/{msa_type}-trees/{fam}_{msa_type}.newick",
         #         msa_type = MSA_TYPES, fam= FAMILIES)
+        expand("data/bootstrap-{msa_type}-trees/{fam}/bootstrap-{sim_ind}.newick",
+              msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS),
+        expand("scores/bootstrap-{msa_type}-trees/{fam}/bootstrap-scores.tsv",
+                msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS)
         
 rule generate_tree:
     input:
@@ -36,6 +43,35 @@ rule generate_tree:
     shell:
         "fasttree {input} > {output}"
 
+rule generate_bootstrap_MSA:
+    input:
+        "data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        "data/{msa_type}-trees/{fam}_{msa_type}.newick"
+    output:
+        "data/bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.fasta"
+    script:
+        "scripts/make_bootstrap_trees.py"
+
+rule generate_bootstrap_tree:
+    input:
+        "data/bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.fasta"
+    output:
+        "data/bootstrap-{msa_type}-trees/{fam}/bootstrap-{sim_ind}.newick"
+    shell:
+        "fasttree {input} > {output}"
+
+rule generate_tree_metrics_bootstrap:
+    input:
+        simulated_trees=expand("data/bootstrap-{msa_type}-trees/{fam}/bootstrap-{sim_ind}.newick",
+                sim_ind = SIM_INDS, msa_type = MSA_TYPES, allow_missing = True), 
+        simulated_MSAs=expand("data/bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.fasta",
+                sim_ind = SIM_INDS, msa_type = MSA_TYPES, allow_missing = True),
+        seed_MSA="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        seed_tree="data/{msa_type}-trees/{fam}_{msa_type}.newick"     
+    output:
+        "scores/bootstrap-{msa_type}-trees/{fam}/bootstrap-scores.tsv"
+    script:
+        "scripts/tree_metrics_generator.py"
 rule root_tree:
     input:
         "data/{msa_type}-trees/{fam}_{msa_type}.newick"
