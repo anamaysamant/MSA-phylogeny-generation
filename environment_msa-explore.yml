@@ -3,8 +3,8 @@ channels:
   - pytorch
   - bioconda
   - nvidia
-  - conda-forge
   - defaults
+  - conda-forge
   - https://repo.anaconda.com/pkgs/main
   - https://repo.anaconda.com/pkgs/r
 dependencies:
@@ -199,6 +199,7 @@ dependencies:
   - python_abi=3.8=2_cp38
   - pytorch=2.1.0=py3.8_cuda12.1_cudnn8.9.2_0
   - pytorch-cuda=12.1=ha16c6d3_6
+  - pytorch-lightning=2.4.0=pyhd8ed1ab_0
   - pytorch-mutex=1.0=cuda
   - pytz=2024.1=py38h06a4308_0
   - pyyaml=6.0.2=py38h5eee18b_0
@@ -261,6 +262,8 @@ dependencies:
       - cython==3.0.11
       - datrie==0.8.2
       - deepspeed==0.5.9
+      - dendropy==5.0.8
+      - dllogger==1.0.0
       - dm-tree==0.1.8
       - docutils==0.20.1
       - dpath==2.2.0
@@ -278,20 +281,22 @@ dependencies:
       - joblib==1.4.2
       - kiwisolver==1.4.7
       - lightning-utilities==0.11.9
+      - llvmlite==0.41.1
       - matplotlib==3.7.5
       - ml-collections==0.1.1
       - multidict==6.1.0
       - narwhals==1.27.1
       - ninja==1.11.1.3
+      - numba==0.58.1
       - omegaconf==2.3.0
       - pandas==2.0.3
+      - patsy==1.0.1
       - plac==1.4.3
       - plotly==6.0.0
       - propcache==0.2.0
       - pulp==2.7.0
       - py-cpuinfo==9.0.0
       - pyparsing==3.1.4
-      - pytorch-lightning==2.4.0
       - regex==2024.11.6
       - reretry==0.11.8
       - safetensors==0.4.5
@@ -301,6 +306,7 @@ dependencies:
       - smart-open==7.1.0
       - smmap==5.0.2
       - snakemake==7.32.4
+      - statsmodels==0.14.1
       - stopit==1.1.2
       - tabulate==0.9.0
       - threadpoolctl==3.5.0
