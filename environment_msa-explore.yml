@@ -263,7 +263,6 @@ dependencies:
       - datrie==0.8.2
       - deepspeed==0.5.9
       - dendropy==5.0.8
-      - dllogger==1.0.0
       - dm-tree==0.1.8
       - docutils==0.20.1
       - dpath==2.2.0

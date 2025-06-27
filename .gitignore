@@ -184,3 +184,6 @@ data/protein-families-DCA-params/PF06351_J.npy
 data/protein-families-DCA-params/PF06351_h.npy
 
 untracked-files/
+
+data/col_attentions/
+data/hamming/
