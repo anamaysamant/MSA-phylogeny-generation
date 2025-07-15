@@ -1,9 +1,10 @@
 FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF13354","PF00595","PF00397","PF00153","PF07679",
             "PF00076","PF00072","PF00096","PF00512","PF00041"]
             # "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
+FAMILIES = ["PF02518"]
 MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static"]
-CONTEXT_SIZES = ["10"]
+CONTEXT_SIZES = ["100"]
 CONTEXT_SAMPLINGS = ["random"]
 PROPOSAL_TYPES = ["logits"]
 N_MUTATIONS = ["500"]
@@ -28,11 +29,11 @@ R_EFFS = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
 
 rule all:
     input:
-        # expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.tsv",
-        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
-        #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        # expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.tsv",
-        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+        expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.tsv",
+                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+                fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("scores/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.tsv",
+                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
         #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         # expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.fasta",
         #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
@@ -46,12 +47,12 @@ rule all:
         # expand("data/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.newick",
         #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
         #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        expand("scores/msa-{msa_type}-sim-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-tree.tsv",
-                msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
-                fam = FAMILIES, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        expand("scores/msa-{msa_type}-sim-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-tree.tsv",
-                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-                proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        # expand("scores/msa-{msa_type}-sim-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-tree.tsv",
+        #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
+        #         fam = FAMILIES, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        # expand("scores/msa-{msa_type}-sim-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-tree.tsv",
+        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+        #         proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/context-size-{context_size}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, n_mutations = N_MUTATIONS_END, 
         #         context_size = CONTEXT_SIZES, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
