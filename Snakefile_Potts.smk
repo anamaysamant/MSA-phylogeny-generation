@@ -2,7 +2,7 @@ FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF00595","PF00397","PF07679
             "PF00072","PF00096","PF00041",
             "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
 FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF00595","PF00397","PF00153","PF07679",
-            "PF00076","PF00072","PF00096","PF00512","PF00041",
+            "PF00076","PF00072","PF00096","PF00512","PF00041","PF13354","PF02518",
             "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
 MSA_TYPES = ["seed"]
 N_MUTATIONS = ["500"]
@@ -35,9 +35,9 @@ rule all:
         # expand("scores/bootstrap-{msa_type}-trees/{fam}/bootstrap-scores.tsv",
         #         msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS),
         expand("scores/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.tsv",
+                msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS),
+        expand("data/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.fasta",
                 msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS)
-        # expand("data/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.fasta",
-        #         msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS)
         
 rule generate_tree:
     input:

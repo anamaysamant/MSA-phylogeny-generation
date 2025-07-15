@@ -15,6 +15,6 @@ n_seqs = len(seqs)
 
 row_sample_inds = np.random.choice(range(n_seqs), n_seqs, replace=True)
 
-bootstrap_MSA = [(nat_seed_sequences[i][0], nat_seed_sequences[i][1]) for i in range(n_seqs)]
+bootstrap_MSA = [(f"seq{j}", nat_seed_sequences[i][1]) for j,i in enumerate(row_sample_inds)]
 
 Seq_tuples_to_fasta(bootstrap_MSA, snakemake.output[0])
