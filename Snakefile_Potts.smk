@@ -1,7 +1,9 @@
 FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF00595","PF00397","PF07679",
             "PF00072","PF00096","PF00041",
             "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
-# FAMILIES = ["PF00005"]
+FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF00595","PF00397","PF00153","PF07679",
+            "PF00076","PF00072","PF00096","PF00512","PF00041",
+            "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
 MSA_TYPES = ["seed"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
@@ -20,18 +22,22 @@ rule all:
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
         # expand("data/msa-{msa_type}-simulation-trees/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.newick",
         #        msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS),
-        expand("scores/msa-{msa_type}-sim-trees/Potts/{fam}/init-seq-{init_seq}/{fam}-tree.tsv",
-               msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS),       
+        # expand("scores/msa-{msa_type}-sim-trees/Potts/{fam}/init-seq-{init_seq}/{fam}-tree.tsv",
+        #        msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS),       
         # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, n_mutations = N_MUTATIONS, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
         # expand("scores/protein-families-msa-{msa_type}/{fam}_{msa_type}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES)
         # expand("data/{msa_type}-trees/{fam}_{msa_type}.newick",
         #         msa_type = MSA_TYPES, fam= FAMILIES)
-        expand("data/bootstrap-{msa_type}-trees/{fam}/bootstrap-{sim_ind}.newick",
-              msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS),
-        expand("scores/bootstrap-{msa_type}-trees/{fam}/bootstrap-scores.tsv",
+        # expand("data/bootstrap-{msa_type}-trees/{fam}/bootstrap-{sim_ind}.newick",
+        #       msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS),
+        # expand("scores/bootstrap-{msa_type}-trees/{fam}/bootstrap-scores.tsv",
+        #         msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS),
+        expand("scores/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.tsv",
                 msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS)
+        # expand("data/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS)
         
 rule generate_tree:
     input:
@@ -59,6 +65,40 @@ rule generate_bootstrap_tree:
         "data/bootstrap-{msa_type}-trees/{fam}/bootstrap-{sim_ind}.newick"
     shell:
         "fasttree {input} > {output}"
+
+rule generate_sequences_bootstrap:
+    input:
+        "data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+    output:
+        "data/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.fasta"
+    script:
+        "scripts/make_sequence_bootstraps.py"
+
+
+
+rule generate_scores_sequences_bootstrap_MSA:
+    input:
+        original_MSA_seed="data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta",
+        original_MSA_full="data/protein-families-msa-full/{fam}.fasta",
+        simulated_MSA="data/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.fasta",
+        tree="data/{msa_type}-trees/{fam}_{msa_type}.newick",
+        hmm="data/protein-families-hmms/{fam}.hmm",
+        J_params="data/protein-families-DCA-params/{fam}_J.npy",
+        h_params="data/protein-families-DCA-params/{fam}_h.npy",
+        pdb_path = "data/pdb-ref-structures/{fam}-ref.pdb" 
+
+    output:
+        ungapped_seq=temp("data/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}-ungapped.fasta"),
+        hmm_table=temp("scores/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.tbl"),
+        score_table="scores/sequences-bootstrap-{msa_type}-msa/{fam}/bootstrap-{sim_ind}.tsv"
+    shell:
+       """
+        seqkit replace -s -p "-" -r "" {input.simulated_MSA} > {output.ungapped_seq}
+        hmmsearch --tblout {output.hmm_table} {input.hmm} {output.ungapped_seq}  
+        python scripts/scores_generator.py --input_hmmer {output.hmm_table} --output {output.score_table} --J_params {input.J_params} \
+        --h_params {input.h_params} --simulated_MSA {input.simulated_MSA} --original_MSA_seed {input.original_MSA_seed} \
+        --original_MSA_full {input.original_MSA_full} --tree {input.tree} --pdb_path {input.pdb_path}
+        """
 
 rule generate_tree_metrics_bootstrap:
     input:
