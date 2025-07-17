@@ -1,7 +1,7 @@
 FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF13354","PF00595","PF00397","PF00153","PF07679",
             "PF00076","PF00072","PF00096","PF00512","PF00041","PF02518"]
             # "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
-FAMILIES = ["PF00005"]
+FAMILIES = ["PF00005","PF00595"]
 MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static"]
 CONTEXT_SIZES = ["10"]
@@ -25,7 +25,7 @@ START_SEQS = ["sampled"]
 N_ROUNDS = ["100"]
 PSEUDOCOUNTS = ["0.0","0.3","0.4"]
 
-R_EFFS = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,2.0]
+R_EFFS = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.5,2.0]
 
 rule all:
     input:
@@ -67,9 +67,9 @@ rule all:
         #         mutation_interval=MUTATION_INTERVALS, n_sequences_MI = N_SEQUENCES_MI,msa_type = MSA_TYPES, start_seqs = START_SEQS, 
         #         proposal_type = PROPOSAL_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, sim_ind = SIM_INDS,n_rounds = N_ROUNDS,
         #         pseudocount = PSEUDOCOUNTS),
-        # expand("other-analyses/r-effective-analysis/scores/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.tsv",
-        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
+        expand("other-analyses/r-effective-analysis/scores/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.tsv",
+                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
         expand("other-analyses/r-effective-analysis/data/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.fasta",
                 msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
                 sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
