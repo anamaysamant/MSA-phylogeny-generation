@@ -1,7 +1,7 @@
 FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF13354","PF00595","PF00397","PF00153","PF07679",
             "PF00076","PF00072","PF00096","PF00512","PF00041","PF02518"]
             # "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
-FAMILIES = ["PF00005","PF00595"]
+# FAMILIES = ["PF00004"]
 MSA_TYPES = ["seed"]
 CONTEXT_TYPES = ["static"]
 CONTEXT_SIZES = ["10"]
@@ -14,7 +14,7 @@ INIT_SEQS = ["0"]
 N_MUTATIONS_START = 500
 N_MUTATIONS_END = ["1000"]
 
-num_simulations = 10
+num_simulations = 100
 
 SIM_INDS = list(range(1,num_simulations+1))
 SIM_INDS = list(map(str,SIM_INDS))
@@ -38,9 +38,9 @@ rule all:
         # expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.fasta",
         #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
         #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
-        # expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.fasta",
-        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
+        expand("data/msa-{msa_type}-simulations/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/static-context/{context_size}/{fam}-{sim_ind}.fasta",
+                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
         # expand("data/msa-{msa_type}-simulation-trees/MSA-1b/{fam}/init-seq-{init_seq}/{proposal_type}-proposal/dynamic-context/{context_size}/{context_sampling}/{fam}-{sim_ind}.newick",
         #         msa_type = MSA_TYPES, context_sampling = CONTEXT_SAMPLINGS, context_size = CONTEXT_SIZES, 
         #         fam = FAMILIES, sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS),
@@ -67,12 +67,12 @@ rule all:
         #         mutation_interval=MUTATION_INTERVALS, n_sequences_MI = N_SEQUENCES_MI,msa_type = MSA_TYPES, start_seqs = START_SEQS, 
         #         proposal_type = PROPOSAL_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, sim_ind = SIM_INDS,n_rounds = N_ROUNDS,
         #         pseudocount = PSEUDOCOUNTS),
-        expand("other-analyses/r-effective-analysis/scores/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.tsv",
-                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
-        expand("other-analyses/r-effective-analysis/data/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.fasta",
-                msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
-                sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
+        # expand("other-analyses/r-effective-analysis/scores/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.tsv",
+        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
+        # expand("other-analyses/r-effective-analysis/data/{fam}/init-seq-{init_seq}/scaling-{r_eff}/static-context/{context_size}/{fam}-{sim_ind}.fasta",
+        #         msa_type = MSA_TYPES, context_size = CONTEXT_SIZES, fam = FAMILIES, 
+        #         sim_ind = SIM_INDS, proposal_type = PROPOSAL_TYPES, init_seq = INIT_SEQS, r_eff = R_EFFS),
 
 
 rule generate_tree_MSA_static:
