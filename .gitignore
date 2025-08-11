@@ -187,3 +187,5 @@ untracked-files/
 
 data/col_attentions/
 data/hamming/
+
+/pfam_seed_msas

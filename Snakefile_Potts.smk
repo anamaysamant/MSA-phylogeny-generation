@@ -1,3 +1,6 @@
+import numpy as np
+import pickle as pkl
+
 FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF00595","PF00397","PF07679",
             "PF00072","PF00096","PF00041",
             "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
@@ -15,6 +18,15 @@ num_simulations = 10
 SIM_INDS = list(range(1,num_simulations+1))
 SIM_INDS = list(map(str,SIM_INDS))
 
+SEQ_LEN_LIM = 500
+
+SEQ_DEPTH_LIM = 500
+
+
+with open("families_under_500.pkl","rb") as f:
+
+    FAMILIES = pkl.load(f)
+
 rule all:
     input:
         # expand("scores/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",
@@ -27,10 +39,10 @@ rule all:
         #        msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS),       
         # expand("scores/no-phylogeny/{n_mutations}-mutations/{n_sequences}-sequences/msa-{msa_type}-simulations/Potts/{fam}/init-seq-{init_seq}/{fam}-{sim_ind}.tsv",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, n_mutations = N_MUTATIONS, n_sequences = N_SEQUENCES, init_seq = INIT_SEQS),
-        expand("scores/protein-families-msa-{msa_type}/{fam}_{msa_type}.tsv",
-                msa_type = MSA_TYPES, fam = FAMILIES)
-        # expand("data/{msa_type}-trees/{fam}_{msa_type}.newick",
-        #         msa_type = MSA_TYPES, fam= FAMILIES)
+        # expand("scores/protein-families-msa-{msa_type}/{fam}_{msa_type}.tsv",
+        #         msa_type = MSA_TYPES, fam = FAMILIES)
+        expand("data/{msa_type}-trees/{fam}_{msa_type}.newick",
+                msa_type = MSA_TYPES, fam= FAMILIES)
         # expand("data/bootstrap-{msa_type}-trees/{fam}/bootstrap-{sim_ind}.newick",
         #       msa_type = MSA_TYPES, fam= FAMILIES, sim_ind = SIM_INDS),
         # expand("scores/bootstrap-{msa_type}-trees/{fam}/bootstrap-scores.tsv",
@@ -42,7 +54,7 @@ rule all:
         
 rule generate_tree:
     input:
-        "data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta"
+        "pfam_seed_msas/fasta/{fam}_{msa_type}.fasta"
     output:
         "data/{msa_type}-trees/{fam}_{msa_type}.newick"
     log:
@@ -113,6 +125,7 @@ rule generate_tree_metrics_bootstrap:
         "scores/bootstrap-{msa_type}-trees/{fam}/bootstrap-scores.tsv"
     script:
         "scripts/tree_metrics_generator.py"
+
 rule root_tree:
     input:
         "data/{msa_type}-trees/{fam}_{msa_type}.newick"

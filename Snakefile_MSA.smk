@@ -1,3 +1,5 @@
+import pickle as pkl
+
 FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF13354","PF00595","PF00397","PF00153","PF07679",
             "PF00076","PF00072","PF00096","PF00512","PF00041","PF02518"]
             # "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
@@ -14,7 +16,7 @@ INIT_SEQS = ["0"]
 N_MUTATIONS_START = 500
 N_MUTATIONS_END = ["1000"]
 
-num_simulations = 100
+num_simulations = 1
 
 SIM_INDS = list(range(1,num_simulations+1))
 SIM_INDS = list(map(str,SIM_INDS))
@@ -26,6 +28,10 @@ N_ROUNDS = ["100"]
 PSEUDOCOUNTS = ["0.0","0.3","0.4"]
 
 R_EFFS = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.5,2.0]
+
+with open("families_under_200.pkl","rb") as f:
+
+    FAMILIES = pkl.load(f)
 
 rule all:
     input:
