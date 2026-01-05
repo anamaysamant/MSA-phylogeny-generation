@@ -7,7 +7,7 @@ FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF00595","PF00397","PF07679
 FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF00595","PF00397","PF00153","PF07679",
             "PF00076","PF00072","PF00096","PF00512","PF00041","PF13354","PF02518",
             "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
-FAMILIES = ["PF00271"]
+# FAMILIES = ["PF00397","PF00153","PF00076"]
 MSA_TYPES = ["seed"]
 N_MUTATIONS = ["500"]
 N_SEQUENCES = ["50"]
@@ -23,9 +23,9 @@ SEQ_LEN_LIM = 500
 SEQ_DEPTH_LIM = 500
 
 
-with open("families_under_500.pkl","rb") as f:
+# with open("families_under_500.pkl","rb") as f:
 
-    FAMILIES = pkl.load(f)
+#     FAMILIES = pkl.load(f)
 
 rule all:
     input:
@@ -54,7 +54,7 @@ rule all:
         
 rule generate_tree:
     input:
-        "pfam_seed_msas/fasta/{fam}_{msa_type}.fasta"
+        "data/protein-families-msa-{msa_type}/{fam}_{msa_type}.fasta"
     output:
         "data/{msa_type}-trees/{fam}_{msa_type}.newick"
     log:

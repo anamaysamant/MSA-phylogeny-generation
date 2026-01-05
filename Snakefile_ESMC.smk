@@ -1,6 +1,6 @@
-FAMILIES = ["PF00271","PF00005","PF00004","PF01535","PF13354","PF00595","PF00397","PF00153","PF07679",
-            "PF00076","PF00072","PF00096","PF00512","PF00041",
-            "PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
+FAMILIES = ["PF00271","PF00005","PF00004"] #"PF01535","PF13354","PF00595","PF00397","PF00153","PF07679",
+            #"PF00076","PF00072","PF00096","PF00512","PF00041",
+            #"PF01356","PF03440","PF04008","PF06351","PF06355", "PF16747","PF18648"]
 MSA_TYPES = ["seed"]
 INIT_SEQS = ["0"]
 PROPOSAL_TYPES = ["logits"]
@@ -14,12 +14,12 @@ rule all:
     input:
         # expand("data/msa-{msa_type}-simulations/ESMC/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.fasta",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
-        # expand("scores/msa-{msa_type}-simulations/ESMC/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.tsv",
-        #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        expand("scores/msa-{msa_type}-simulations/ESMC/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.tsv",
+                msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
         # expand("data/msa-{msa_type}-simulation-trees/ESMC/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-{sim_ind}.newick",
         #         msa_type = MSA_TYPES, fam = FAMILIES, sim_ind = SIM_INDS, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
-        expand("scores/msa-{msa_type}-sim-trees/ESMC/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-tree.tsv",
-                msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
+        # expand("scores/msa-{msa_type}-sim-trees/ESMC/{fam}/init-seq-{init_seq}/{proposal}-proposal/{fam}-tree.tsv",
+        #         msa_type = MSA_TYPES, fam = FAMILIES, init_seq = INIT_SEQS, proposal = PROPOSAL_TYPES),
         
 # rule generate_tree:
 #     input:

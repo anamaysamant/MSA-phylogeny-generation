@@ -167,6 +167,8 @@ n_rows = len(synth_sequences)
 
 if not no_phylogeny:
     nat_seed_sequences_dict = dict(nat_seed_sequences)
+    print(len(nat_seed_sequences_dict.keys()))
+    print(len(tree.get_terminals()))
     matched_seqs = leaf_matcher(tree.clade, all_syn_seqs=synth_sequences, all_nat_seqs_dict=nat_seed_sequences_dict)
     synth_sequences = pd.DataFrame(synth_sequences, columns=["sequence_name","sequence"])
     scores_table = scores_table.merge(synth_sequences, on="sequence_name").merge(matched_seqs, on="sequence_name")
